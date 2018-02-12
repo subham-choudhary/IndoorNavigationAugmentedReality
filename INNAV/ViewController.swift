@@ -29,10 +29,14 @@ class ViewController: UIViewController,ARSCNViewDelegate {
     let myQueue = DispatchQueue(label: "myQueue", qos: .userInitiated)
     var showFloorMesh = true
     let pathGraph = GKGraph()
-    
-    var tempNavStartEndPoints = [SCNVector3(),SCNVector3()]
-    var tempNavFlag = false
+    let origin = SCNVector3Make(0, 0, 0)
     var tempYAxis = Float()
+    
+    var stringPathMap = [String:[String]]()
+    var dictOfNodes = [String:GKGraphNode2D]()
+    var poiNode = String()
+    var strNode = String()
+    var cameraLocation = SCNVector3()
     //
     // MARK: ViewDelegate Methods //
     //
@@ -47,7 +51,6 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         self.sceneView.scene.rootNode.addChildNode(poiRootNode)
         self.sceneView.scene.rootNode.addChildNode(rootNavigationNode)
         self.sceneView.scene.rootNode.addChildNode(rootConnectingNode)
-//        self.sceneView.scene.rootNode.worldPosition = rootTempNode.position
     }
     //
     // MARK: ARSCNViewDelegate Methods //
@@ -79,6 +82,9 @@ class ViewController: UIViewController,ARSCNViewDelegate {
                 self.addPointOfInterestNode(hitTestResult: hitTest.first!)
                 self.poiFlag = false
             }
+            guard let pointOfView = self.sceneView.pointOfView else { return }
+            let transform = pointOfView.transform
+            self.cameraLocation = SCNVector3(transform.m41, transform.m42, transform.m43)
         }
     }
     func renderer(_ renderer: SCNSceneRenderer, didRemove node: SCNNode, for anchor: ARAnchor) {
@@ -116,42 +122,69 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         dictPlanes = [ARPlaneAnchor:Plane]()
         self.sceneView.debugOptions.remove(
             [ARSCNDebugOptions.showFeaturePoints,ARSCNDebugOptions.showWorldOrigin])
-        rootPathNode.removeFromParentNode()
+//        rootPathNode.removeFromParentNode()
         rootTempNode.removeFromParentNode()
-        rootConnectingNode.removeFromParentNode()
-
-//        for path in dempoArray {
-//            let navigationNode = CylinderLine(v1: path.start, v2: path.end, radius: 0.2, UIImageName:"arrow5")
-//            rootNavigationNode.addChildNode(navigationNode)
-//        }
-        let startNode = GKGraphNode2D.node(withPoint: vector2(tempNavStartEndPoints[0].x, tempNavStartEndPoints[0].z))
-        let destNode = GKGraphNode2D.node(withPoint: vector2(tempNavStartEndPoints[1].x, tempNavStartEndPoints[1].z))
+//        rootConnectingNode.removeFromParentNode()
         
-        let wayPoints: [GKGraphNode] = pathGraph.findPath(from: startNode, to: destNode)
-//        let path: [GKGraphNode] = myGraph.findPath(from: nodeA, to: nodeF)
+        var minDistanc = Float()
+        minDistanc = 1000
+        var nearestNode = SCNNode()
         
-        var x = SCNVector3(startNode.position.x, tempYAxis, startNode.position.y)
-        
-        var skipFlag = true;
-        for path in wayPoints {
-            
-            print(path)
-            let pathWithoutY = (path as! GKGraphNode2D).position
-            let y = SCNVector3(pathWithoutY.x, tempYAxis, pathWithoutY.y)
-            if skipFlag {
-                skipFlag = false
-                x = y
-                continue
+        rootPathNode.enumerateChildNodes { (child, _) in
+            if !isEqual(n1: origin, n2: child.position) {
+                
+                let dist0 = distanceBetween(n1: cameraLocation, n2: child.position)
+                if minDistanc>dist0 {
+                    
+                    minDistanc = dist0
+                    nearestNode = child
+                }
             }
-            let navigationNode = CylinderLine(v1: x, v2: y, radius: 0.2, UIImageName:"arrow5")
-            rootNavigationNode.addChildNode(navigationNode)
-            x = y
         }
-        
+        stringPathMap["\(cameraLocation)"] = ["\(nearestNode.position)"]
+        strNode = "\(cameraLocation)"
+        retrieveFromDictAndNavigate()
     }
     //
     // MARK: Custom Methods //
     //
+    func retrieveFromDictAndNavigate() {
+        
+        for data in stringPathMap {
+            let myVector = self.getVector2FromString(str: data.key)
+            dictOfNodes[data.key] = GKGraphNode2D(point: vector2(Float(myVector.x),Float(myVector.z)))
+            pathGraph.add([dictOfNodes[data.key]!])
+        }
+        for data in stringPathMap {
+            
+            let keyNode = dictOfNodes[data.key]!
+            
+            for data2 in data.value {
+                keyNode.addConnections(to: [dictOfNodes["\(data2)"]!], bidirectional: true)
+            }
+        }
+        let startKeyVectorString = strNode
+        let destKeyVectorString = poiNode
+        
+        let startNode = dictOfNodes[startKeyVectorString]
+        let destNode = dictOfNodes[destKeyVectorString]
+        let wayPoint:[GKGraphNode2D] = pathGraph.findPath(from: startNode!, to: destNode!) as! [GKGraphNode2D]
+        
+        var x = wayPoint[0]
+        var skipWaypointFlag = true
+        for path in wayPoint {
+            
+            if skipWaypointFlag {
+                skipWaypointFlag = false
+                continue
+            }
+            let str = SCNVector3(x.position.x, tempYAxis, x.position.y)
+            let dst = SCNVector3(path.position.x, tempYAxis, path.position.y)
+            let navigationNode = CylinderLine(v1: str, v2: dst, radius: 0.2, UIImageName:"arrow5")
+            rootNavigationNode.addChildNode(navigationNode)
+            x = path
+        }
+    }
     func addTempNode(hitTestResult:ARHitTestResult) {
         
         let node = SCNNode(geometry: SCNSphere(radius: 0.05))
@@ -167,98 +200,111 @@ class ViewController: UIViewController,ARSCNViewDelegate {
             pathNodes[1] = node
             rootTempNode.addChildNode(node)
         }
-        
     }
     func addPointOfInterestNode(hitTestResult:ARHitTestResult) {
         
-        let node = SCNNode(geometry:SCNCylinder(radius: 0.1, height: 1))
+        let node = SCNNode(geometry:SCNCylinder(radius: 0.05, height: 1))
         node.geometry?.firstMaterial?.diffuse.contents = UIColor.red
         let transform = hitTestResult.worldTransform
         let thirdColumn = transform.columns.3
         node.position = SCNVector3Make(thirdColumn.x, thirdColumn.y+0.5, thirdColumn.z)
         poiRootNode.addChildNode(node)
+        
+        var minDistanc = Float()
+        minDistanc = 1000
+        var nearestNode = SCNNode()
+        
+        rootPathNode.enumerateChildNodes { (child, _) in
+            if !isEqual(n1: origin, n2: child.position) {
+                
+                let dist0 = distanceBetween(n1: node.position, n2: child.position)
+                if minDistanc>dist0 {
+                    
+                    minDistanc = dist0
+                    nearestNode = child
+                }
+            }
+        }
+        stringPathMap["\(node.position)"] = ["\(nearestNode.position)"]
+        poiNode = "\(node.position)"
     }
     
     func addPathNodes(n1:SCNVector3, n2:SCNVector3) {
         
-        var node1Positon = n1
-        var node2Positon = n2
+        var node1Position = n1
+        var node2Position = n2
         var isNode1exists = false
         var isNode2exists = false
         rootPathNode.enumerateChildNodes({ (child, _) in
             
-            if child.parent == rootPathNode {
-                print("*")
-            }
+            // To merge path node less than 0.5 meters
+            if !isEqual(n1: origin, n2: child.position) {
+                
                 let dist0 = distanceBetween(n1: n1, n2: child.position)
                 let dist1 = distanceBetween(n1: n2, n2: child.position)
                 if(dist0 <= 0.5){
-                    node1Positon = child.position
+                    node1Position = child.position
                     isNode1exists = true
                 }
                 if(dist1 <= 0.5){
-                    node2Positon = child.position
+                    node2Position = child.position
                     isNode2exists = true
                 }
-            
-        })
-        if distanceBetween(n1: node1Positon, n2: node2Positon) > 0.5 {
-            
-            if (!tempNavFlag) {
-                tempNavStartEndPoints[0] = node1Positon
-                tempNavFlag = true
-            } else {
-                tempNavStartEndPoints[1] = node2Positon
             }
+        })
+        addPathNodeWithConnectingNode(node1Position: node1Position, node2Positon: node2Position)
+        mapNodesToStringDict(node1Positon: node1Position, node2Positon: node2Position, isNode1exists: isNode1exists, isNode2exists: isNode2exists)
+        
+        isNode1exists = false
+        isNode2exists = false
+    }
+    //TO add path nodes and connecting node
+    func addPathNodeWithConnectingNode(node1Position:SCNVector3,node2Positon:SCNVector3) {
+        
+        let pathNode = SCNNode()
+        let node = SCNNode(geometry: SCNSphere(radius: 0.05))
+        let node2 = SCNNode(geometry: SCNSphere(radius: 0.05))
+        node.geometry?.firstMaterial?.diffuse.contents = UIColor.white
+        node2.geometry?.firstMaterial?.diffuse.contents = UIColor.white
+        node.position = node1Position
+        node2.position = node2Positon
+        pathNode.addChildNode(node)
+        pathNode.addChildNode(node2)
+        rootPathNode.addChildNode(pathNode)
+        let connectingNode = SCNNode()
+        rootConnectingNode.addChildNode(
+            connectingNode.buildLineInTwoPointsWithRotation(
+                from: node1Position,
+                to: node2Positon,
+                radius: 0.02,
+                color: .cyan))
+        
+    }
+    //TO map nodes into String Dictionary
+    func mapNodesToStringDict (node1Positon:SCNVector3,node2Positon:SCNVector3,
+                               isNode1exists:Bool,isNode2exists:Bool ) {
+        
+        let position1String = "\(node1Positon)"
+        let position2String = "\(node2Positon)"
+        
+        if isNode1exists {
             
-            let pathNode = SCNNode()
-            let node = SCNNode(geometry: SCNSphere(radius: 0.05))
-            let node2 = SCNNode(geometry: SCNSphere(radius: 0.05))
-            node.geometry?.firstMaterial?.diffuse.contents = UIColor.white
-            node2.geometry?.firstMaterial?.diffuse.contents = UIColor.white
-            node.position = node1Positon
-            node2.position = node2Positon
-            pathNode.addChildNode(node)
-            pathNode.addChildNode(node2)
-            rootPathNode.addChildNode(pathNode)
-//            dempoArray.append((start: node.position, end:node2.position))
-            let connectingNode = SCNNode()
-            rootConnectingNode.addChildNode(
-                connectingNode.buildLineInTwoPointsWithRotation(
-                    from: node1Positon,
-                    to: node2Positon,
-                    radius: 0.02,
-                    color: .cyan))
+            var arr = stringPathMap[position1String]
+            arr?.append(position2String)
+            stringPathMap[position1String] = arr
             
-//            let position1String = "\(node1Positon)"
-//            let position2String = "\(node2Positon)"
-        ///////////////////////////////////////////////
-//            var gameNode1 = GKGraphNode2D()
-//            var gameNode2 = GKGraphNode2D()
-//
-//            if isNode1exists {
-//
-//                gameNode1 = GKGraphNode2D.node(withPoint: vector2(node1Positon.x, node1Positon.z))
-//
-//            } else { // Create new node
-//
-//                gameNode1.position = vector2(node1Positon.x, node1Positon.z)
-//                pathGraph.add([gameNode1])
-//            }
-//            if isNode2exists {
-//
-//                gameNode2 = GKGraphNode2D.node(withPoint: vector2(node2Positon.x, node2Positon.z))
-//
-//            } else { // Create new node
-//
-//                gameNode2.position = vector2(node2Positon.x, node2Positon.z)
-//                pathGraph.add([gameNode2])
-//            }
-//            gameNode1.addConnections(to: [gameNode2], bidirectional: true)
-//
-//            isNode1exists = false
-//            isNode2exists = false
-      }
+        } else { // Create new node
+            stringPathMap[position1String] = [position2String]
+        }
+        if isNode2exists {
+            
+            var arr = stringPathMap[position2String]
+            arr?.append(position1String)
+            stringPathMap[position2String] = arr
+            
+        } else { // Create new node
+            stringPathMap[position2String] = [position1String]
+        }
     }
     func removeTempNode() {
         rootTempNode.removeFromParentNode()
@@ -282,4 +328,36 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         let theta = ((n2.z-n1.z)/(n2.x-n1.x)).degreesToRadians // m = tan0 //
         return Float(tan(theta))
     }
+    func isEqual(n1:SCNVector3,n2:SCNVector3)-> Bool {
+        if (n1.x == n2.x) && (n1.y == n2.y) && (n1.z == n2.z) {
+            return true
+        } else {
+            return false
+        }
+    }
+    func getVector2FromString(str:String) -> vector_double3 {
+        
+        let xrange = str.index(str.startIndex, offsetBy: 10)...str.index(str.endIndex, offsetBy: -1)
+        let str1 = str[xrange]
+        
+        var x:String = ""
+        var y:String = ""
+        var z:String = ""
+        var counter = 1
+        for i in str1 {
+            //    print (i)
+            if (i == "-" || i == "." || i == "0" || i == "1" || i == "2" || i == "3" || i == "4" || i == "5" || i == "6" || i == "7" || i == "8" || i == "9") {
+                switch counter {
+                case 1 : x = x + "\(i)"
+                case 2 : y = y + "\(i)"
+                case 3 : z = z + "\(i)"
+                default : break
+                }
+            } else if (i == ",") {
+                counter = counter + 1
+            }
+        }
+        return vector3(Double(x)!,Double(y)!,Double(z)!)
+    }
 }
+

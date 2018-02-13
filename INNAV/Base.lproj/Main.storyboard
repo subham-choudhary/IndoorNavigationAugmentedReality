@@ -54,7 +54,7 @@
                                 <color key="textColor" red="1" green="0.0" blue="0.0" alpha="1" colorSpace="calibratedRGB"/>
                                 <nil key="highlightedColor"/>
                             </label>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Wqk-2n-6UC">
+                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="Wqk-2n-6UC">
                                 <rect key="frame" x="16" y="585" width="106" height="62"/>
                                 <color key="backgroundColor" red="0.90196079019999997" green="0.90196079019999997" blue="0.90196079019999997" alpha="0.5" colorSpace="calibratedRGB"/>
                                 <constraints>
@@ -69,7 +69,7 @@
                                     <action selector="AddPOIAction:" destination="BYZ-38-t0r" eventType="touchUpInside" id="Cju-E3-bi1"/>
                                 </connections>
                             </button>
-                            <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wGp-Qo-bed">
+                            <button hidden="YES" opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="wGp-Qo-bed">
                                 <rect key="frame" x="253" y="585" width="106" height="62"/>
                                 <color key="backgroundColor" red="0.90196079019999997" green="0.90196079019999997" blue="0.90196079019999997" alpha="0.5" colorSpace="calibratedRGB"/>
                                 <constraints>
@@ -105,7 +105,9 @@
                         <viewLayoutGuide key="safeArea" id="6Tk-OE-BBY"/>
                     </view>
                     <connections>
+                        <outlet property="addPOIBtn" destination="Wqk-2n-6UC" id="TRS-47-lgg"/>
                         <outlet property="drawBtn" destination="l59-Th-ZNC" id="8uz-8L-Jej"/>
+                        <outlet property="navigateBtn" destination="wGp-Qo-bed" id="RD0-Jz-HHr"/>
                         <outlet property="sceneView" destination="dkh-GD-IJM" id="49i-k4-e9c"/>
                     </connections>
                 </viewController>

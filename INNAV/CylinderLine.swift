@@ -11,6 +11,8 @@ import ARKit
 
 class   CylinderLine: SCNNode
 {
+    let material = SCNMaterial()
+    
     init(
         v1: SCNVector3,//Source
         v2: SCNVector3,//Destination
@@ -47,10 +49,14 @@ class   CylinderLine: SCNNode
         //                cyl.radialSegmentCount = radSegmentCount
         //                cyl.firstMaterial?.diffuse.contents = color
         //                cyl.firstMaterial?.specular.contents = UIColor.white
-        let material = SCNMaterial()
+        
         let scaleX = (Float(radius*3)  / 0.2).rounded()
         let scaleY = (Float(height) / 0.2).rounded()
         material.diffuse.contents = UIImage(named:UIImageName)
+        material.emission.contents = UIColor.green
+    
+        
+        
         material.diffuse.contentsTransform = SCNMatrix4MakeScale(scaleX/3, scaleY/2, 0)
         material.diffuse.wrapS = .repeat
         material.diffuse.wrapT = .repeat
@@ -75,6 +81,27 @@ class   CylinderLine: SCNNode
     }
     required init?(coder aDecoder: NSCoder) {
         super.init(coder: aDecoder)
+    }
+    
+    weak var timer: Timer?
+    
+    
+    func startTimer() {
+        
+        timer?.invalidate()
+        timer = Timer.scheduledTimer(withTimeInterval: 0.25, repeats: true) { [weak self] _ in
+            if  (self?.material.emission.contents as! UIColor) == UIColor.yellow {
+                self?.material.emission.contents = UIColor.green
+            } else {
+                self?.material.emission.contents = UIColor.yellow
+            }
+        }
+    }
+    func stopTimer() {
+        timer?.invalidate()
+    }
+    deinit {
+        stopTimer()
     }
 }
 //

@@ -14,6 +14,8 @@ class ViewController: UIViewController,ARSCNViewDelegate {
     
     @IBOutlet weak var sceneView: ARSCNView!
     @IBOutlet weak var drawBtn: UIButton!
+    @IBOutlet weak var navigateBtn: UIButton!
+    @IBOutlet weak var addPOIBtn: UIButton!
     
     let configuration = ARWorldTrackingConfiguration()
     var tempNodeFlag = false
@@ -25,18 +27,22 @@ class ViewController: UIViewController,ARSCNViewDelegate {
     let rootPathNode = SCNNode()
     let rootConnectingNode = SCNNode()
     let rootNavigationNode = SCNNode()
-    let poiRootNode = SCNNode()
+    let rootPOINode = SCNNode()
     let myQueue = DispatchQueue(label: "myQueue", qos: .userInitiated)
-    var showFloorMesh = true
-    let pathGraph = GKGraph()
+    var showFloorMesh = false
+    
+    var pathGraph = GKGraph()
     let origin = SCNVector3Make(0, 0, 0)
     var tempYAxis = Float()
     
     var stringPathMap = [String:[String]]()
     var dictOfNodes = [String:GKGraphNode2D]()
-    var poiNode = String()
+    var poiNode = [String]()
     var strNode = String()
     var cameraLocation = SCNVector3()
+    var poiName = [String]()
+    var poiCounter = 0
+    weak var timer: Timer?
     //
     // MARK: ViewDelegate Methods //
     //
@@ -48,10 +54,13 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         configuration.planeDetection = .horizontal
         self.sceneView.session.run(configuration)
         self.sceneView.scene.rootNode.addChildNode(rootPathNode)
-        self.sceneView.scene.rootNode.addChildNode(poiRootNode)
+        self.sceneView.scene.rootNode.addChildNode(rootPOINode)
         self.sceneView.scene.rootNode.addChildNode(rootNavigationNode)
         self.sceneView.scene.rootNode.addChildNode(rootConnectingNode)
+        poiName.append("Garrage X")
+        poiName.append("Cafe")
     }
+
     //
     // MARK: ARSCNViewDelegate Methods //
     //
@@ -105,15 +114,59 @@ class ViewController: UIViewController,ARSCNViewDelegate {
             tempYAxis = pathNodes[0].position.y
             addPathNodes(n1: pathNodes[0].position,n2: pathNodes[1].position)
             counter = 0
+            addPOIBtn.isHidden = false
         } else {
             tempNodeFlag = true
             drawBtn.setTitle("Stop", for: .normal)
         }
     }
     @IBAction func AddPOIAction(_ sender: Any) {
-        poiFlag = true
+        
+//        let alertCtrlr = UIAlertController(title: "Point of Interest", message: nil , preferredStyle: .alert)
+//        alertCtrlr.addTextField { (textField) in
+//            textField.placeholder = "Enter a name for POI"
+//        }
+//        let action = UIAlertAction(title: "Done", style: .default) { (alertAction) in
+//            let textField = alertCtrlr.textFields![0] as UITextField
+//            self.poiName.append(textField.text!)
+//            self.poiFlag = true
+//        }
+//
+//        alertCtrlr.addAction(action)
+//        self.present(alertCtrlr,animated:true,completion:nil)
+       self.poiFlag = true
+        poiCounter += 1
+        
     }
     @IBAction func NavigateAction(_ sender: Any) {
+        
+        let alertCtrlr = UIAlertController(title: "Select POI", message: nil , preferredStyle: .alert)
+        
+        timer?.invalidate()
+
+        let action1 = UIAlertAction(title: poiName.first, style: .default) { (alertAction) in
+            
+            self.timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+                self?.tempFunc(destNode: (self?.poiNode.first!)!)
+            }
+        }
+        let action2 = UIAlertAction(title: poiName[1], style: .default) { (alertAction) in
+            
+            self.timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+                self?.tempFunc(destNode: (self?.poiNode[1])!)
+            }
+            
+        }
+        
+        alertCtrlr.addAction(action1)
+        alertCtrlr.addAction(action2)
+        self.present(alertCtrlr,animated:true,completion:nil)
+        
+    }
+    //
+    // MARK: Custom Methods //
+    //
+    func tempFunc(destNode:String) {
         
         for (key,_) in dictPlanes {
             let plane = key as ARAnchor
@@ -122,9 +175,9 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         dictPlanes = [ARPlaneAnchor:Plane]()
         self.sceneView.debugOptions.remove(
             [ARSCNDebugOptions.showFeaturePoints,ARSCNDebugOptions.showWorldOrigin])
-//        rootPathNode.removeFromParentNode()
+//                rootPathNode.removeFromParentNode()
         rootTempNode.removeFromParentNode()
-//        rootConnectingNode.removeFromParentNode()
+                rootConnectingNode.removeFromParentNode()
         
         var minDistanc = Float()
         minDistanc = 1000
@@ -143,19 +196,21 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         }
         stringPathMap["\(cameraLocation)"] = ["\(nearestNode.position)"]
         strNode = "\(cameraLocation)"
-        retrieveFromDictAndNavigate()
-    }
-    //
-    // MARK: Custom Methods //
-    //
-    func retrieveFromDictAndNavigate() {
         
+        retrieveFromDictAndNavigate(destNode:destNode)
+    }
+    func retrieveFromDictAndNavigate(destNode:String) {
+        
+        rootNavigationNode.enumerateChildNodes { (node, _) in
+            node.removeFromParentNode()
+        }
         for data in stringPathMap {
             let myVector = self.getVector2FromString(str: data.key)
             dictOfNodes[data.key] = GKGraphNode2D(point: vector2(Float(myVector.x),Float(myVector.z)))
             pathGraph.add([dictOfNodes[data.key]!])
         }
         for data in stringPathMap {
+            print(data)
             
             let keyNode = dictOfNodes[data.key]!
             
@@ -164,11 +219,11 @@ class ViewController: UIViewController,ARSCNViewDelegate {
             }
         }
         let startKeyVectorString = strNode
-        let destKeyVectorString = poiNode
+        let destKeyVectorString = destNode
         
-        let startNode = dictOfNodes[startKeyVectorString]
-        let destNode = dictOfNodes[destKeyVectorString]
-        let wayPoint:[GKGraphNode2D] = pathGraph.findPath(from: startNode!, to: destNode!) as! [GKGraphNode2D]
+        let startNodeFromDict = dictOfNodes[startKeyVectorString]
+        let destNodeFromDict = dictOfNodes[destKeyVectorString]
+        let wayPoint:[GKGraphNode2D] = pathGraph.findPath(from: startNodeFromDict!, to: destNodeFromDict!) as! [GKGraphNode2D]
         
         var x = wayPoint[0]
         var skipWaypointFlag = true
@@ -181,9 +236,13 @@ class ViewController: UIViewController,ARSCNViewDelegate {
             let str = SCNVector3(x.position.x, tempYAxis, x.position.y)
             let dst = SCNVector3(path.position.x, tempYAxis, path.position.y)
             let navigationNode = CylinderLine(v1: str, v2: dst, radius: 0.2, UIImageName:"arrow5")
+            navigationNode.startTimer()
             rootNavigationNode.addChildNode(navigationNode)
             x = path
         }
+        pathGraph = GKGraph()
+        stringPathMap.removeValue(forKey: strNode)
+        
     }
     func addTempNode(hitTestResult:ARHitTestResult) {
         
@@ -202,13 +261,28 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         }
     }
     func addPointOfInterestNode(hitTestResult:ARHitTestResult) {
-        
-        let node = SCNNode(geometry:SCNCylinder(radius: 0.05, height: 1))
-        node.geometry?.firstMaterial?.diffuse.contents = UIColor.red
+       
         let transform = hitTestResult.worldTransform
         let thirdColumn = transform.columns.3
-        node.position = SCNVector3Make(thirdColumn.x, thirdColumn.y+0.5, thirdColumn.z)
-        poiRootNode.addChildNode(node)
+        
+        let node = SCNNode(geometry:SCNCylinder(radius: 0.04, height: 1.7))
+        node.geometry?.firstMaterial?.diffuse.contents = UIColor.red
+        node.position = SCNVector3Make(thirdColumn.x, thirdColumn.y+0.85, thirdColumn.z)
+        rootPOINode.addChildNode(node)
+        
+        let node2 = SCNNode(geometry:SCNBox(width: 0.25, height: 0.25, length: 0.25, chamferRadius: 0.01))
+        
+        switch poiCounter {
+        case 1:
+            node2.geometry?.firstMaterial?.diffuse.contents = UIImage(named: "G")
+        case 2:
+            node2.geometry?.firstMaterial?.diffuse.contents = UIImage(named: "C")
+            self.navigateBtn.isHidden = false
+        default:
+            node2.geometry?.firstMaterial?.diffuse.contents = UIImage(named: "C")
+        }
+        node2.position = SCNVector3Make(thirdColumn.x, thirdColumn.y+1.5, thirdColumn.z)
+        rootPOINode.addChildNode(node2)
         
         var minDistanc = Float()
         minDistanc = 1000
@@ -226,7 +300,7 @@ class ViewController: UIViewController,ARSCNViewDelegate {
             }
         }
         stringPathMap["\(node.position)"] = ["\(nearestNode.position)"]
-        poiNode = "\(node.position)"
+        poiNode.append("\(node.position)")
     }
     
     func addPathNodes(n1:SCNVector3, n2:SCNVector3) {

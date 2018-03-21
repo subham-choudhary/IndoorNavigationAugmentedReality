@@ -8,6 +8,8 @@
 //
 
 import UIKit
+import Placenote
+
 
 @UIApplicationMain
 class AppDelegate: UIResponder, UIApplicationDelegate {
@@ -17,6 +19,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate {
 
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplicationLaunchOptionsKey: Any]?) -> Bool {
         // Override point for customization after application launch.
+        
+         LibPlacenote.instance.initialize(apiKey: "0xdxowl14gsbe1yen4r41kdazfn1y5k2ir9x7wmaii8vo4xchk27o8h2a8gnfr7e0x0nf4sdfiu63oy9txtpchr4rg24ffqssgbp")
         return true
     }
 

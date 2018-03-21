@@ -9,9 +9,10 @@
 import UIKit
 import ARKit
 import GameplayKit
+import Placenote
 
-class ViewController: UIViewController,ARSCNViewDelegate {
-    
+class ViewController: UIViewController,ARSCNViewDelegate,PNDelegate {
+
     @IBOutlet weak var sceneView: ARSCNView!
     @IBOutlet weak var drawBtn: UIButton!
     @IBOutlet weak var navigateBtn: UIButton!
@@ -35,7 +36,7 @@ class ViewController: UIViewController,ARSCNViewDelegate {
     let origin = SCNVector3Make(0, 0, 0)
     var tempYAxis = Float()
     
-    var stringPathMap = [String:[String]]()
+    var stringMap = [String:[String]]()
     var dictOfNodes = [String:GKGraphNode2D]()
     var poiNode = [String]()
     var strNode = String()
@@ -43,16 +44,28 @@ class ViewController: UIViewController,ARSCNViewDelegate {
     var poiName = [String]()
     var poiCounter = 0
     weak var timer: Timer?
+    
+    private var camManager: CameraManager? = nil;
+    private var ptViz: FeaturePointVisualizer? = nil;
+    private var placenoteSessionRunning: Bool = false
+    
     //
     // MARK: ViewDelegate Methods //
     //
     override func viewDidLoad() {
         super.viewDidLoad()
+        LibPlacenote.instance.multiDelegate += self
         
         self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints,ARSCNDebugOptions.showWorldOrigin]
         self.sceneView.autoenablesDefaultLighting = true
         configuration.planeDetection = .horizontal
         self.sceneView.session.run(configuration)
+        if let camera: SCNNode = sceneView?.pointOfView {
+            camManager = CameraManager(scene: sceneView.scene, cam: camera)
+        }
+        ptViz = FeaturePointVisualizer(inputScene: sceneView.scene);
+        ptViz?.enableFeaturePoints()
+        
         self.sceneView.scene.rootNode.addChildNode(rootPathNode)
         self.sceneView.scene.rootNode.addChildNode(rootPOINode)
         self.sceneView.scene.rootNode.addChildNode(rootNavigationNode)
@@ -60,9 +73,18 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         poiName.append("Garrage X")
         poiName.append("Cafe")
     }
-
     //
-    // MARK: ARSCNViewDelegate Methods //
+    // MARK: PNDelegate Methods
+    //
+    func onPose(_ outputPose: matrix_float4x4, _ arkitPose: matrix_float4x4) {
+        
+    }
+    
+    func onStatusChange(_ prevStatus: LibPlacenote.MappingStatus, _ currStatus: LibPlacenote.MappingStatus) {
+        
+    }
+    //
+    // MARK: ARSCNViewDelegate Methods
     //
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
         if showFloorMesh{
@@ -194,7 +216,8 @@ class ViewController: UIViewController,ARSCNViewDelegate {
                 }
             }
         }
-        stringPathMap["\(cameraLocation)"] = ["\(nearestNode.position)"]
+        
+        stringMap["\(cameraLocation)"] = ["\(nearestNode.position)"]
         strNode = "\(cameraLocation)"
         
         retrieveFromDictAndNavigate(destNode:destNode)
@@ -204,12 +227,12 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         rootNavigationNode.enumerateChildNodes { (node, _) in
             node.removeFromParentNode()
         }
-        for data in stringPathMap {
+        for data in stringMap {
             let myVector = self.getVector2FromString(str: data.key)
             dictOfNodes[data.key] = GKGraphNode2D(point: vector2(Float(myVector.x),Float(myVector.z)))
             pathGraph.add([dictOfNodes[data.key]!])
         }
-        for data in stringPathMap {
+        for data in stringMap {
             print(data)
             
             let keyNode = dictOfNodes[data.key]!
@@ -241,7 +264,7 @@ class ViewController: UIViewController,ARSCNViewDelegate {
             x = path
         }
         pathGraph = GKGraph()
-        stringPathMap.removeValue(forKey: strNode)
+        stringMap.removeValue(forKey: strNode)
         
     }
     func addTempNode(hitTestResult:ARHitTestResult) {
@@ -284,22 +307,37 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         node2.position = SCNVector3Make(thirdColumn.x, thirdColumn.y+1.5, thirdColumn.z)
         rootPOINode.addChildNode(node2)
         
-        var minDistanc = Float()
-        minDistanc = 1000
-        var nearestNode = SCNNode()
+        var minDistanc1 = Float()
+        minDistanc1 = 1000
+        var nearestNode1 = SCNNode()
         
         rootPathNode.enumerateChildNodes { (child, _) in
             if !isEqual(n1: origin, n2: child.position) {
                 
                 let dist0 = distanceBetween(n1: node.position, n2: child.position)
-                if minDistanc>dist0 {
+                if minDistanc1>dist0 {
                     
-                    minDistanc = dist0
-                    nearestNode = child
+                    minDistanc1 = dist0
+                    nearestNode1 = child
                 }
             }
         }
-        stringPathMap["\(node.position)"] = ["\(nearestNode.position)"]
+        var minDistanc2 = Float()
+        minDistanc2 = 1000
+        var nearestNode2 = SCNNode()
+        
+        rootPathNode.enumerateChildNodes { (child, _) in
+            if !isEqual(n1: origin, n2: child.position) && !isEqual(n1: child.position, n2: nearestNode1.position) {
+                
+                let dist0 = distanceBetween(n1: node.position, n2: child.position)
+                if minDistanc2>dist0 {
+                    
+                    minDistanc2 = dist0
+                    nearestNode2 = child
+                }
+            }
+        }
+        stringMap["\(node.position)"] = ["\(nearestNode2.position)"]
         poiNode.append("\(node.position)")
     }
     
@@ -327,7 +365,7 @@ class ViewController: UIViewController,ARSCNViewDelegate {
             }
         })
         addPathNodeWithConnectingNode(node1Position: node1Position, node2Positon: node2Position)
-        mapNodesToStringDict(node1Positon: node1Position, node2Positon: node2Position, isNode1exists: isNode1exists, isNode2exists: isNode2exists)
+        mapNodePositionToStringMap(node1Positon: node1Position, node2Positon: node2Position, isNode1exists: isNode1exists, isNode2exists: isNode2exists)
         
         isNode1exists = false
         isNode2exists = false
@@ -355,7 +393,7 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         
     }
     //TO map nodes into String Dictionary
-    func mapNodesToStringDict (node1Positon:SCNVector3,node2Positon:SCNVector3,
+    func mapNodePositionToStringMap (node1Positon:SCNVector3,node2Positon:SCNVector3,
                                isNode1exists:Bool,isNode2exists:Bool ) {
         
         let position1String = "\(node1Positon)"
@@ -363,21 +401,21 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         
         if isNode1exists {
             
-            var arr = stringPathMap[position1String]
+            var arr = stringMap[position1String]
             arr?.append(position2String)
-            stringPathMap[position1String] = arr
+            stringMap[position1String] = arr
             
         } else { // Create new node
-            stringPathMap[position1String] = [position2String]
+            stringMap[position1String] = [position2String]
         }
         if isNode2exists {
             
-            var arr = stringPathMap[position2String]
+            var arr = stringMap[position2String]
             arr?.append(position1String)
-            stringPathMap[position2String] = arr
+            stringMap[position2String] = arr
             
         } else { // Create new node
-            stringPathMap[position2String] = [position1String]
+            stringMap[position2String] = [position1String]
         }
     }
     func removeTempNode() {

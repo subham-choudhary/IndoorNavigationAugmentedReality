@@ -11,14 +11,17 @@ import ARKit
 import GameplayKit
 import Placenote
 
-class ViewController: UIViewController,ARSCNViewDelegate,PNDelegate {
+class ViewController: UIViewController,ARSCNViewDelegate,PNDelegate,ARSessionDelegate {
 
     @IBOutlet weak var sceneView: ARSCNView!
     @IBOutlet weak var drawBtn: UIButton!
     @IBOutlet weak var navigateBtn: UIButton!
     @IBOutlet weak var addPOIBtn: UIButton!
+    @IBOutlet weak var label: UILabel!
+    @IBOutlet weak var MapButton: UIButton!
     
     let configuration = ARWorldTrackingConfiguration()
+    
     var tempNodeFlag = false
     var poiFlag = false
     var pathNodes = [SCNNode(),SCNNode()]
@@ -52,26 +55,34 @@ class ViewController: UIViewController,ARSCNViewDelegate,PNDelegate {
     //
     // MARK: ViewDelegate Methods //
     //
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         LibPlacenote.instance.multiDelegate += self
+        configuration.worldAlignment = ARWorldTrackingConfiguration.WorldAlignment.gravity
         
-        self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints,ARSCNDebugOptions.showWorldOrigin]
+        self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints]
         self.sceneView.autoenablesDefaultLighting = true
+        self.sceneView.showsStatistics = true
         configuration.planeDetection = .horizontal
-        self.sceneView.session.run(configuration)
+        
+        sceneView.session.delegate = self
+        ptViz = FeaturePointVisualizer(inputScene: sceneView.scene);
+        ptViz?.enableFeaturePoints()
         if let camera: SCNNode = sceneView?.pointOfView {
             camManager = CameraManager(scene: sceneView.scene, cam: camera)
         }
-        ptViz = FeaturePointVisualizer(inputScene: sceneView.scene);
-        ptViz?.enableFeaturePoints()
         
+        
+        self.sceneView.session.run(configuration)
         self.sceneView.scene.rootNode.addChildNode(rootPathNode)
         self.sceneView.scene.rootNode.addChildNode(rootPOINode)
         self.sceneView.scene.rootNode.addChildNode(rootNavigationNode)
         self.sceneView.scene.rootNode.addChildNode(rootConnectingNode)
         poiName.append("Garrage X")
         poiName.append("Cafe")
+        poiName.append("Meeting Room 1")
+        
     }
     //
     // MARK: PNDelegate Methods
@@ -81,7 +92,32 @@ class ViewController: UIViewController,ARSCNViewDelegate,PNDelegate {
     }
     
     func onStatusChange(_ prevStatus: LibPlacenote.MappingStatus, _ currStatus: LibPlacenote.MappingStatus) {
+        if (prevStatus == LibPlacenote.MappingStatus.lost && currStatus == LibPlacenote.MappingStatus.running) {
+            
+            for i in stringMap {
+                let n1 = getVector3FromString(str: i.key)
+                let node1 = SCNVector3Make(Float(n1.x), Float(n1.y), Float(n1.z))
+                for j in i.value {
+                    let n2 = getVector3FromString(str: j)
+                    let node2 = SCNVector3Make(Float(n2.x), Float(n2.y), Float(n2.z))
+                    addPathNodeWithConnectingNode(node1Position: node1, node2Positon: node2)
+                }
+            }
+            
+            print("Map Found!")
+             self.label.text = "Map found"
+        }
+    }
+    
+    // send AR frame to placenote
+    func session(_ session: ARSession, didUpdate: ARFrame) {
         
+        let image: CVPixelBuffer = didUpdate.capturedImage
+        let pose: matrix_float4x4 = didUpdate.camera.transform
+        
+        if (placenoteSessionRunning) {
+            LibPlacenote.instance.setFrame(image: image, pose: pose)
+        }
     }
     //
     // MARK: ARSCNViewDelegate Methods
@@ -100,7 +136,7 @@ class ViewController: UIViewController,ARSCNViewDelegate,PNDelegate {
     func renderer(_ renderer: SCNSceneRenderer, didUpdate node: SCNNode, for anchor: ARAnchor) {
         
         DispatchQueue.main.async {
-            
+//            self.label.text = self.sceneView.debugDescription
             if let planeAnchor = anchor as? ARPlaneAnchor {
                 let plane = self.dictPlanes[planeAnchor]
                 plane?.updateWith(planeAnchor)
@@ -126,6 +162,69 @@ class ViewController: UIViewController,ARSCNViewDelegate,PNDelegate {
     //
     // MARK: Button Actions //
     //
+    
+    @IBAction func Clear(_ sender: Any) {
+        
+        rootPathNode.enumerateChildNodes { (node, _) in
+            node.removeFromParentNode()
+        }
+        rootConnectingNode.enumerateChildNodes { (node, _) in
+            node.removeFromParentNode()
+        }
+        LibPlacenote.instance.stopSession()
+    }
+    @IBAction func LoadMap(_ sender: Any) {
+        
+        if (!placenoteSessionRunning)
+        {
+            placenoteSessionRunning = true
+            let key = UserDefaults.standard.string(forKey: "MapKey")
+            LibPlacenote.instance.loadMap(mapId: key!,
+                                          downloadProgressCb: {(completed: Bool, faulted: Bool, percentage: Float) -> Void in
+                                            if (completed) {
+                                                LibPlacenote.instance.startSession()
+                                                _ = self.retrieveFromFile()
+                                                self.label.text = "Map Downloaded"
+                                            }
+            })
+        }
+    }
+    
+    @IBAction func SaveMap(_ sender: Any) {
+        
+        // start mapping session.
+        
+        if (!placenoteSessionRunning)
+        {
+            placenoteSessionRunning = true
+            LibPlacenote.instance.startSession()
+            MapButton.setTitle("Save Map", for: UIControlState.normal)
+        }
+        else
+        {
+            MapButton.setTitle("Start Map", for: UIControlState.normal)
+            placenoteSessionRunning = false
+            
+            //save the map and stop session
+            LibPlacenote.instance.saveMap(savedCb: { (mapID: String?) -> Void in
+                
+                self.label.text = "MapId: " + mapID!
+                UserDefaults.standard.set(mapID, forKey: "MapKey")
+                LibPlacenote.instance.stopSession()  },
+                                          
+                                          uploadProgressCb: {(completed: Bool, faulted: Bool, percentage: Float) -> Void in
+                                            print("Map Uploading...")
+                                            self.label.text = "Map Uploading..."
+                                            if(completed){
+                                                print("Map upload done!!!")
+                                                self.label.text = "Map upload done!!!"
+                                                self.saveFile()
+                                            }
+            })
+        }
+    }
+    
+    
     @IBAction func StartAction(_ sender: Any) {
         
         if tempNodeFlag {
@@ -169,26 +268,70 @@ class ViewController: UIViewController,ARSCNViewDelegate,PNDelegate {
         let action1 = UIAlertAction(title: poiName.first, style: .default) { (alertAction) in
             
             self.timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-                self?.tempFunc(destNode: (self?.poiNode.first!)!)
+                self?.tempNavFunc(destNode: (self?.poiNode.first!)!)
             }
         }
         let action2 = UIAlertAction(title: poiName[1], style: .default) { (alertAction) in
             
             self.timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-                self?.tempFunc(destNode: (self?.poiNode[1])!)
+                self?.tempNavFunc(destNode: (self?.poiNode[1])!)
+            }
+            
+        }
+        let action3 = UIAlertAction(title: poiName[2], style: .default) { (alertAction) in
+            
+            self.timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
+                self?.tempNavFunc(destNode: (self?.poiNode[2])!)
             }
             
         }
         
         alertCtrlr.addAction(action1)
         alertCtrlr.addAction(action2)
+        alertCtrlr.addAction(action3)
         self.present(alertCtrlr,animated:true,completion:nil)
         
     }
     //
     // MARK: Custom Methods //
     //
-    func tempFunc(destNode:String) {
+
+    func saveFile () {
+        guard let documentDirectoryUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        
+        let fileUrl: URL = documentDirectoryUrl.appendingPathComponent("Map.json")
+        
+        do {
+            let dataOut = try JSONSerialization.data(withJSONObject: stringMap, options: [])
+            try dataOut.write(to: fileUrl, options: [])
+            self.label.text = "File saved"
+        } catch {
+            print (error)
+            return;
+        }
+    }
+    func retrieveFromFile() -> Bool {
+
+        guard let documentDirectoryUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return false }
+        
+        let fileUrl: URL = documentDirectoryUrl.appendingPathComponent("Map.json")
+        
+        // Read data from .json file and transform data into an array
+        do {
+            let data = try Data(contentsOf: fileUrl, options: [])
+            guard let shapeArray = try JSONSerialization.jsonObject(with: data, options: []) as? [String: [String]] else { return false }
+            stringMap = shapeArray
+             self.label.text = "Retrieved from file"
+        } catch {
+            print ("Could not retrieve shape json file")
+            self.label.text = "Could not retrieve shape json file"
+            print(error)
+            return false
+        }
+        return true
+    }
+    
+    func tempNavFunc(destNode:String) {
         
         for (key,_) in dictPlanes {
             let plane = key as ARAnchor
@@ -197,9 +340,9 @@ class ViewController: UIViewController,ARSCNViewDelegate,PNDelegate {
         dictPlanes = [ARPlaneAnchor:Plane]()
         self.sceneView.debugOptions.remove(
             [ARSCNDebugOptions.showFeaturePoints,ARSCNDebugOptions.showWorldOrigin])
-//                rootPathNode.removeFromParentNode()
+        rootPathNode.removeFromParentNode()
         rootTempNode.removeFromParentNode()
-                rootConnectingNode.removeFromParentNode()
+        rootConnectingNode.removeFromParentNode()
         
         var minDistanc = Float()
         minDistanc = 1000
@@ -228,7 +371,7 @@ class ViewController: UIViewController,ARSCNViewDelegate,PNDelegate {
             node.removeFromParentNode()
         }
         for data in stringMap {
-            let myVector = self.getVector2FromString(str: data.key)
+            let myVector = self.getVector3FromString(str: data.key)
             dictOfNodes[data.key] = GKGraphNode2D(point: vector2(Float(myVector.x),Float(myVector.z)))
             pathGraph.add([dictOfNodes[data.key]!])
         }
@@ -289,22 +432,25 @@ class ViewController: UIViewController,ARSCNViewDelegate,PNDelegate {
         let thirdColumn = transform.columns.3
         
         let node = SCNNode(geometry:SCNCylinder(radius: 0.04, height: 1.7))
-        node.geometry?.firstMaterial?.diffuse.contents = UIColor.red
-        node.position = SCNVector3Make(thirdColumn.x, thirdColumn.y+0.85, thirdColumn.z)
-        rootPOINode.addChildNode(node)
-        
         let node2 = SCNNode(geometry:SCNBox(width: 0.25, height: 0.25, length: 0.25, chamferRadius: 0.01))
         
+        node.geometry?.firstMaterial?.diffuse.contents = UIColor.red
         switch poiCounter {
         case 1:
             node2.geometry?.firstMaterial?.diffuse.contents = UIImage(named: "G")
         case 2:
             node2.geometry?.firstMaterial?.diffuse.contents = UIImage(named: "C")
+        case 3:
+            node2.geometry?.firstMaterial?.diffuse.contents = UIImage(named: "M")
             self.navigateBtn.isHidden = false
         default:
             node2.geometry?.firstMaterial?.diffuse.contents = UIImage(named: "C")
         }
+        
+        node.position = SCNVector3Make(thirdColumn.x, thirdColumn.y+0.85, thirdColumn.z)
         node2.position = SCNVector3Make(thirdColumn.x, thirdColumn.y+1.5, thirdColumn.z)
+        
+        rootPOINode.addChildNode(node)
         rootPOINode.addChildNode(node2)
         
         var minDistanc1 = Float()
@@ -447,7 +593,7 @@ class ViewController: UIViewController,ARSCNViewDelegate,PNDelegate {
             return false
         }
     }
-    func getVector2FromString(str:String) -> vector_double3 {
+    func getVector3FromString(str:String) -> vector_double3 {
         
         let xrange = str.index(str.startIndex, offsetBy: 10)...str.index(str.endIndex, offsetBy: -1)
         let str1 = str[xrange]

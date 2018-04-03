@@ -26,6 +26,7 @@ class ViewController: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     var dictPlanes = [ARPlaneAnchor:Plane]()
     let rootTempNode = SCNNode()
     let rootPathNode = SCNNode()
+    let root1node = SCNNode()
     let rootConnectingNode = SCNNode()
     let rootNavigationNode = SCNNode()
     let rootPOINode = SCNNode()
@@ -47,6 +48,8 @@ class ViewController: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     
     var detectedDataAnchor: ARAnchor?
     var processing = false
+    let generator = UINotificationFeedbackGenerator()
+    let impact = UIImpactFeedbackGenerator(style:.heavy)
     //
     // MARK: ViewDelegate Methods //
     //
@@ -61,10 +64,11 @@ class ViewController: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         
         self.sceneView.session.run(configuration)
         
-        self.sceneView.scene.rootNode.addChildNode(rootPathNode)
-        self.sceneView.scene.rootNode.addChildNode(rootPOINode)
-        self.sceneView.scene.rootNode.addChildNode(rootNavigationNode)
-        self.sceneView.scene.rootNode.addChildNode(rootConnectingNode)
+        self.sceneView.scene.rootNode.addChildNode(root1node)
+        root1node.addChildNode(rootPathNode)
+        root1node.addChildNode(rootPOINode)
+        root1node.addChildNode(rootNavigationNode)
+        root1node.addChildNode(rootConnectingNode)
         
         poiName.append("Garrage X")
         poiName.append("Cafe")
@@ -81,19 +85,22 @@ class ViewController: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     // MARK: - ARSCNViewDelegate
     
     func renderer(_ renderer: SCNSceneRenderer, nodeFor anchor: ARAnchor) -> SCNNode? {
-        
+
         // If this is our anchor, create a node
         if self.detectedDataAnchor?.identifier == anchor.identifier {
-            
+
             let QRSphere = SCNNode(geometry: SCNSphere(radius: 0.05))
-            
+
 //             Set its position based off the anchor
             QRSphere.transform = SCNMatrix4(anchor.transform)
+            root1node.transform = QRSphere.transform
             
+            print(root1node.transform)
+
             return QRSphere
         }
-        
-        return nil
+
+        return SCNNode()
     }
     
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
@@ -136,77 +143,79 @@ class ViewController: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     // MARK: - ARSessionDelegate
     
     public func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        
-        
+
+
         // Only run one Vision request at a time
         if self.processing {
             return
         }
-        
+
         self.processing = true
-        
+
         // Create a Barcode Detection Request
         let request = VNDetectBarcodesRequest { (request, error) in
-            
+
             // Get the first result out of the results, if there are any
             if let results = request.results, let result = results.first as? VNBarcodeObservation {
-                
+
                 // Get the bounding box for the bar code and find the center
                 var rect = result.boundingBox
-                
+
                 // Flip coordinates
                 rect = rect.applying(CGAffineTransform(scaleX: 1, y: -1))
                 rect = rect.applying(CGAffineTransform(translationX: 0, y: 1))
-                
+
                 // Get center
                 let center = CGPoint(x: rect.midX, y: rect.midY)
-                
+
                 // Go back to the main thread
                 DispatchQueue.main.async {
-                    
+
                     // Perform a hit test on the ARFrame to find a surface
                     let hitTestResults = frame.hitTest(center, types: [.featurePoint/*, .estimatedHorizontalPlane, .existingPlane, .existingPlaneUsingExtent*/] )
-                    
+
                     // If we have a result, process it
                     if let hitTestResult = hitTestResults.first {
-                        
+
                         // If we already have an anchor, update the position of the attached node
                         if let detectedDataAnchor = self.detectedDataAnchor,
                             let node = self.sceneView.node(for: detectedDataAnchor) {
-                            
+
                             node.transform = SCNMatrix4(hitTestResult.worldTransform)
-                            self.sceneView.scene.rootNode.transform = SCNMatrix4(hitTestResult.worldTransform)
-                            
+                            self.root1node.transform = node.transform
+
                         } else {
                             // Create an anchor. The node will be created in delegate methods
                             self.detectedDataAnchor = ARAnchor(transform: hitTestResult.worldTransform)
                             self.sceneView.session.add(anchor: self.detectedDataAnchor!)
+                            self.impact.impactOccurred()
+                            
                         }
                     }
-                    
+
                     // Set processing flag off
                     self.processing = false
                 }
-                
+
             } else {
                 // Set processing flag off
                 self.processing = false
             }
         }
-        
+
         // Process the request in the background
         DispatchQueue.global(qos: .userInitiated).async {
             do {
                 // Set it to recognize QR code only
                 request.symbologies = [.QR]
-                
+
                 // Create a request handler using the captured image from the ARFrame
                 let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: frame.capturedImage,
                                                                 options: [:])
                 // Process the request
                 try imageRequestHandler.perform([request])
             } catch {
-                
+
             }
         }
     }
@@ -353,7 +362,7 @@ class ViewController: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         if counter == 0 {
             pathNodes[0] = node
             counter = 1
-            self.sceneView.scene.rootNode.addChildNode(rootTempNode)
+            root1node.addChildNode(rootTempNode)
         } else {
             pathNodes[1] = node
             rootTempNode.addChildNode(node)

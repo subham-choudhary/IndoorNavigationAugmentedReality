@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B9194AE520750ED3008B3521 /* QR.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9194AE420750ED3008B3521 /* QR.swift */; };
 		B957FB9F2017B5EF00B7141C /* CylinderLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B957FB9E2017B5EF00B7141C /* CylinderLine.swift */; };
 		B95A98A42007A1940057878E /* Plane.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95A98A32007A1940057878E /* Plane.swift */; };
 		B9DBE9D62003C2D60092D69D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DBE9D52003C2D60092D69D /* AppDelegate.swift */; };
@@ -17,6 +18,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		B9194AE420750ED3008B3521 /* QR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QR.swift; sourceTree = "<group>"; };
 		B957FB9E2017B5EF00B7141C /* CylinderLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CylinderLine.swift; sourceTree = "<group>"; };
 		B95A98A32007A1940057878E /* Plane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plane.swift; sourceTree = "<group>"; };
 		B9DBE9D22003C2D60092D69D /* INNAV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = INNAV.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -59,8 +61,9 @@
 			isa = PBXGroup;
 			children = (
 				B9DBE9D52003C2D60092D69D /* AppDelegate.swift */,
-				B9DBE9D72003C2D60092D69D /* ViewController.swift */,
 				B9DBE9D92003C2D60092D69D /* Main.storyboard */,
+				B9194AE420750ED3008B3521 /* QR.swift */,
+				B9DBE9D72003C2D60092D69D /* ViewController.swift */,
 				B957FB9E2017B5EF00B7141C /* CylinderLine.swift */,
 				B95A98A32007A1940057878E /* Plane.swift */,
 				B9DBE9DC2003C2D60092D69D /* Assets.xcassets */,
@@ -145,6 +148,7 @@
 				B9DBE9D82003C2D60092D69D /* ViewController.swift in Sources */,
 				B95A98A42007A1940057878E /* Plane.swift in Sources */,
 				B9DBE9D62003C2D60092D69D /* AppDelegate.swift in Sources */,
+				B9194AE520750ED3008B3521 /* QR.swift in Sources */,
 				B957FB9F2017B5EF00B7141C /* CylinderLine.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

@@ -10,11 +10,17 @@ import AVFoundation
 import UIKit
 
 class QR: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
-    var captureSession: AVCaptureSession!
-    var previewLayer: AVCaptureVideoPreviewLayer!
+    
     
     @IBOutlet weak var box: UIView!
     @IBOutlet weak var label: UILabel!
+    @IBOutlet weak var instruction: UILabel!
+    @IBOutlet weak var segueButton: UIButton!
+    
+    var captureSession: AVCaptureSession!
+    var previewLayer: AVCaptureVideoPreviewLayer!
+    var timer = Timer()
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -61,10 +67,9 @@ class QR: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
         
         view.addSubview(label)
         view.addSubview(box)
-        
+        view.addSubview(instruction)
         captureSession.startRunning()
     }
-    
     func failed() {
         let ac = UIAlertController(title: "Scanning not supported", message: "Your device does not support scanning a code from an item. Please use a device with a camera.", preferredStyle: .alert)
         ac.addAction(UIAlertAction(title: "OK", style: .default))
@@ -80,6 +85,10 @@ class QR: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
         }
         self.navigationController?.hidesBarsOnSwipe = false
         self.navigationController?.hidesBarsOnTap = false
+        
+        timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true, block: { (_) in
+            self.segueButton.isHidden = true
+        })
     }
     
     override func viewWillDisappear(_ animated: Bool) {
@@ -88,10 +97,11 @@ class QR: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
         if (captureSession?.isRunning == true) {
             captureSession.stopRunning()
         }
+        timer.invalidate()
     }
     
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
-        captureSession.stopRunning()
+
         
         if let metadataObject = metadataObjects.first {
             guard let readableObject = metadataObject as? AVMetadataMachineReadableCodeObject else { return }
@@ -105,7 +115,8 @@ class QR: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
     
     func found(code: String) {
         print(code)
-        performSegue(withIdentifier: "innav", sender: nil)
+//        performSegue(withIdentifier: "innav", sender: nil)
+        segueButton.isHidden = false
     }
     
     override var prefersStatusBarHidden: Bool {
@@ -114,5 +125,8 @@ class QR: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
     
     override var supportedInterfaceOrientations: UIInterfaceOrientationMask {
         return .portrait
+    }
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        captureSession.stopRunning()
     }
 }

@@ -11,7 +11,7 @@ import ARKit
 import GameplayKit
 //import Vision
 
-class ViewController: UIViewController,ARSCNViewDelegate {
+class ViewController: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     
     @IBOutlet weak var sceneView: ARSCNView!
     @IBOutlet weak var drawBtn: UIButton!
@@ -76,6 +76,22 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         
         poiName.append("Garrage X")
         poiName.append("Cafe")
+        
+        if retrieveFromFile() {
+            
+            for data in stringPathMap {
+                
+                let node1 = self.getVector3FromString(str: data.key)
+                let n1 = SCNVector3Make(Float(node1.x), Float(node1.y), Float(node1.z))
+                
+                for data2 in data.value {
+                    
+                    let node2 = self.getVector3FromString(str: data2)
+                    let n2 = SCNVector3Make(Float(node2.x), Float(node2.y), Float(node2.z))
+                    addPathNodes(n1: n1, n2: n2)
+                }
+            }
+        }
         
         
     }
@@ -146,6 +162,10 @@ class ViewController: UIViewController,ARSCNViewDelegate {
         }
     }
     // MARK: - ARSessionDelegate
+    
+    func session(_ session: ARSession, didUpdate frame: ARFrame) {
+        
+    }
     
 //    public func session(_ session: ARSession, didUpdate frame: ARFrame) {
 //
@@ -234,9 +254,46 @@ class ViewController: UIViewController,ARSCNViewDelegate {
     //
     // MARK: Button Actions //
     //
+    
+    func saveFile () {
+        guard let documentDirectoryUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
+        
+        let fileUrl: URL = documentDirectoryUrl.appendingPathComponent("Map.json")
+        
+        do {
+            let dataOut = try JSONSerialization.data(withJSONObject: stringPathMap, options: [])
+            try dataOut.write(to: fileUrl, options: [])
+//            self.label.text = "File saved"
+        } catch {
+            print (error)
+            return;
+        }
+    }
+    func retrieveFromFile() -> Bool {
+    
+        guard let documentDirectoryUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return false }
+        
+        let fileUrl: URL = documentDirectoryUrl.appendingPathComponent("Map.json")
+        
+        // Read data from .json file and transform data into an array
+        do {
+            let data = try Data(contentsOf: fileUrl, options: [])
+            guard let shapeArray = try JSONSerialization.jsonObject(with: data, options: []) as? [String: [String]] else { return false }
+            stringPathMap = shapeArray
+//            self.label.text = "Retrieved from file"
+        } catch {
+            print ("Could not retrieve shape json file")
+//            self.label.text = "Could not retrieve shape json file"
+            print(error)
+            return false
+        }
+        return true
+    }
+    
     @IBAction func StartAction(_ sender: Any) {
         
         if tempNodeFlag {
+            
             tempNodeFlag = false
             drawBtn.setTitle("Start", for: .normal)
             removeTempNode()
@@ -245,6 +302,9 @@ class ViewController: UIViewController,ARSCNViewDelegate {
             addPathNodes(n1: pathNodes[0].position,n2: pathNodes[1].position)
             counter = 0
             addPOIBtn.isHidden = false
+            myQueue.async {
+                self.saveFile()
+            }
         } else {
             tempNodeFlag = true
             drawBtn.setTitle("Stop", for: .normal)
@@ -252,7 +312,7 @@ class ViewController: UIViewController,ARSCNViewDelegate {
     }
     @IBAction func AddPOIAction(_ sender: Any) {
         
-       self.poiFlag = true
+        self.poiFlag = true
         poiCounter += 1
         
     }
@@ -323,7 +383,7 @@ class ViewController: UIViewController,ARSCNViewDelegate {
             node.removeFromParentNode()
         }
         for data in stringPathMap {
-            let myVector = self.getVector2FromString(str: data.key)
+            let myVector = self.getVector3FromString(str: data.key)
             dictOfNodes[data.key] = GKGraphNode2D(point: vector2(Float(myVector.x),Float(myVector.z)))
             pathGraph.add([dictOfNodes[data.key]!])
         }
@@ -530,7 +590,7 @@ class ViewController: UIViewController,ARSCNViewDelegate {
             return false
         }
     }
-    func getVector2FromString(str:String) -> vector_double3 {
+    func getVector3FromString(str:String) -> vector_double3 {
         
         let xrange = str.index(str.startIndex, offsetBy: 10)...str.index(str.endIndex, offsetBy: -1)
         let str1 = str[xrange]

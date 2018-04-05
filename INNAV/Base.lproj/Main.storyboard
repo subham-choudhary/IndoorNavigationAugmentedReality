@@ -29,6 +29,11 @@
                                     <outlet property="delegate" destination="BYZ-38-t0r" id="p0t-00-dsJ"/>
                                 </connections>
                             </arscnView>
+                            <button opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="R7f-9Y-Eee">
+                                <rect key="frame" x="10" y="10" width="46" height="30"/>
+                                <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                <state key="normal" title="Button"/>
+                            </button>
                             <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="l59-Th-ZNC">
                                 <rect key="frame" x="143" y="585" width="89" height="62"/>
                                 <color key="backgroundColor" red="0.90196079019999997" green="0.90196079019999997" blue="0.90196079019999997" alpha="0.5" colorSpace="calibratedRGB"/>
@@ -125,7 +130,7 @@
                         <subviews>
                             <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="SCAN QR CODE TO START " textAlignment="center" lineBreakMode="tailTruncation" baselineAdjustment="alignBaselines" adjustsFontSizeToFit="NO" translatesAutoresizingMaskIntoConstraints="NO" id="TkI-zp-bum">
                                 <rect key="frame" x="0.0" y="556" width="375" height="39"/>
-                                <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.50545804794520544" colorSpace="calibratedRGB"/>
+                                <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.79917594178082196" colorSpace="calibratedRGB"/>
                                 <constraints>
                                     <constraint firstAttribute="height" constant="39" id="gOf-Sa-lnF"/>
                                 </constraints>
@@ -134,7 +139,7 @@
                                 <nil key="highlightedColor"/>
                             </label>
                             <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="Z56-B8-os7">
-                                <rect key="frame" x="16" y="80" width="343" height="418"/>
+                                <rect key="frame" x="16" y="96" width="343" height="402"/>
                                 <subviews>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="RD6-9v-Bof">
                                         <rect key="frame" x="285" y="43" width="50" height="7"/>
@@ -145,7 +150,7 @@
                                         </constraints>
                                     </view>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="pyg-s0-Jtl">
-                                        <rect key="frame" x="8" y="43" width="50" height="7"/>
+                                        <rect key="frame" x="7" y="43" width="50" height="7"/>
                                         <color key="backgroundColor" red="0.40000000600000002" green="0.80000001190000003" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="50" id="nmG-3u-sL3"/>
@@ -161,7 +166,7 @@
                                         </constraints>
                                     </view>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="In0-OG-zX0">
-                                        <rect key="frame" x="8" y="372" width="50" height="7"/>
+                                        <rect key="frame" x="7" y="353" width="50" height="7"/>
                                         <color key="backgroundColor" red="0.40000000600000002" green="0.80000001190000003" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="50" id="0LL-Cs-kHY"/>
@@ -169,7 +174,7 @@
                                         </constraints>
                                     </view>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="gBd-TC-tM1">
-                                        <rect key="frame" x="285" y="372" width="50" height="7"/>
+                                        <rect key="frame" x="285" y="353" width="50" height="7"/>
                                         <color key="backgroundColor" red="0.40000000600000002" green="0.80000001190000003" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="50" id="gLJ-IX-NIL"/>
@@ -177,7 +182,7 @@
                                         </constraints>
                                     </view>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="T6U-4l-IF3">
-                                        <rect key="frame" x="329" y="43" width="7" height="50"/>
+                                        <rect key="frame" x="328" y="43" width="7" height="50"/>
                                         <color key="backgroundColor" red="0.40000000600000002" green="0.80000001190000003" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                         <constraints>
                                             <constraint firstAttribute="width" constant="7" id="6AI-I1-Gpa"/>
@@ -185,7 +190,7 @@
                                         </constraints>
                                     </view>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="z9q-DN-YDm">
-                                        <rect key="frame" x="7" y="327" width="7" height="50"/>
+                                        <rect key="frame" x="7" y="308" width="7" height="50"/>
                                         <color key="backgroundColor" red="0.40000000600000002" green="0.80000001190000003" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="50" id="jKZ-vt-9Mq"/>
@@ -193,41 +198,62 @@
                                         </constraints>
                                     </view>
                                     <view contentMode="scaleToFill" translatesAutoresizingMaskIntoConstraints="NO" id="igl-pp-oSL">
-                                        <rect key="frame" x="329" y="327" width="7" height="50"/>
+                                        <rect key="frame" x="328" y="308" width="7" height="50"/>
                                         <color key="backgroundColor" red="0.40000000600000002" green="0.80000001190000003" blue="1" alpha="1" colorSpace="calibratedRGB"/>
                                         <constraints>
                                             <constraint firstAttribute="height" constant="50" id="6Ky-NL-QaP"/>
                                             <constraint firstAttribute="width" constant="7" id="mBB-lU-ReA"/>
                                         </constraints>
                                     </view>
+                                    <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="NSu-93-6ZI">
+                                        <rect key="frame" x="7" y="43" width="328" height="317"/>
+                                        <color key="backgroundColor" red="1" green="1" blue="1" alpha="0.0" colorSpace="calibratedRGB"/>
+                                        <connections>
+                                            <segue destination="BYZ-38-t0r" kind="show" id="AuW-Dj-avB"/>
+                                        </connections>
+                                    </button>
                                 </subviews>
                                 <color key="backgroundColor" red="0.0" green="0.0" blue="0.0" alpha="0.0" colorSpace="calibratedRGB"/>
                                 <constraints>
-                                    <constraint firstItem="In0-OG-zX0" firstAttribute="leading" secondItem="Z56-B8-os7" secondAttribute="leading" constant="8" id="118-Ou-Ogw"/>
+                                    <constraint firstItem="In0-OG-zX0" firstAttribute="leading" secondItem="Z56-B8-os7" secondAttribute="leading" constant="7" id="118-Ou-Ogw"/>
                                     <constraint firstAttribute="trailing" secondItem="RD6-9v-Bof" secondAttribute="trailing" constant="8" id="6FC-sl-CEw"/>
                                     <constraint firstItem="z9q-DN-YDm" firstAttribute="leading" secondItem="Z56-B8-os7" secondAttribute="leading" constant="7" id="9GA-gn-QeV"/>
-                                    <constraint firstAttribute="trailing" secondItem="T6U-4l-IF3" secondAttribute="trailing" constant="7" id="AH8-SG-bfS"/>
+                                    <constraint firstAttribute="trailing" secondItem="T6U-4l-IF3" secondAttribute="trailing" constant="8" id="AH8-SG-bfS"/>
                                     <constraint firstItem="RD6-9v-Bof" firstAttribute="top" secondItem="Z56-B8-os7" secondAttribute="top" constant="43" id="Esz-ab-WWo"/>
-                                    <constraint firstAttribute="trailing" secondItem="igl-pp-oSL" secondAttribute="trailing" constant="7" id="GSV-Eo-mPb"/>
-                                    <constraint firstItem="pyg-s0-Jtl" firstAttribute="leading" secondItem="Z56-B8-os7" secondAttribute="leading" constant="8" id="JUM-QY-zdB"/>
-                                    <constraint firstAttribute="bottom" secondItem="In0-OG-zX0" secondAttribute="bottom" constant="39" id="QEL-NE-zpp"/>
-                                    <constraint firstAttribute="bottom" secondItem="gBd-TC-tM1" secondAttribute="bottom" constant="39" id="aSo-8i-1Ou"/>
+                                    <constraint firstAttribute="trailing" secondItem="igl-pp-oSL" secondAttribute="trailing" constant="8" id="GSV-Eo-mPb"/>
+                                    <constraint firstItem="pyg-s0-Jtl" firstAttribute="leading" secondItem="Z56-B8-os7" secondAttribute="leading" constant="7" id="JUM-QY-zdB"/>
+                                    <constraint firstItem="NSu-93-6ZI" firstAttribute="leading" secondItem="Z56-B8-os7" secondAttribute="leading" constant="7" id="KD9-2I-QEk"/>
+                                    <constraint firstAttribute="bottom" secondItem="In0-OG-zX0" secondAttribute="bottom" constant="42" id="QEL-NE-zpp"/>
+                                    <constraint firstAttribute="bottom" secondItem="NSu-93-6ZI" secondAttribute="bottom" constant="42" id="RsS-8s-RMz"/>
+                                    <constraint firstAttribute="bottom" secondItem="gBd-TC-tM1" secondAttribute="bottom" constant="42" id="aSo-8i-1Ou"/>
+                                    <constraint firstAttribute="trailing" secondItem="NSu-93-6ZI" secondAttribute="trailing" constant="8" id="ab9-cH-jYz"/>
                                     <constraint firstAttribute="trailing" secondItem="gBd-TC-tM1" secondAttribute="trailing" constant="8" id="b3A-QZ-2v7"/>
-                                    <constraint firstAttribute="bottom" secondItem="z9q-DN-YDm" secondAttribute="bottom" constant="41" id="eB7-dV-cXa"/>
+                                    <constraint firstItem="NSu-93-6ZI" firstAttribute="top" secondItem="Z56-B8-os7" secondAttribute="top" constant="43" id="cbM-nG-s7h"/>
+                                    <constraint firstAttribute="bottom" secondItem="z9q-DN-YDm" secondAttribute="bottom" constant="44" id="eB7-dV-cXa"/>
                                     <constraint firstItem="kza-7i-k8n" firstAttribute="top" secondItem="Z56-B8-os7" secondAttribute="top" constant="43" id="lRS-Yp-QMf"/>
                                     <constraint firstItem="pyg-s0-Jtl" firstAttribute="top" secondItem="Z56-B8-os7" secondAttribute="top" constant="43" id="mCM-nY-bpf"/>
                                     <constraint firstItem="T6U-4l-IF3" firstAttribute="top" secondItem="Z56-B8-os7" secondAttribute="top" constant="43" id="t9s-Mg-nfu"/>
                                     <constraint firstItem="kza-7i-k8n" firstAttribute="leading" secondItem="Z56-B8-os7" secondAttribute="leading" constant="7" id="wR1-dX-naQ"/>
-                                    <constraint firstAttribute="bottom" secondItem="igl-pp-oSL" secondAttribute="bottom" constant="41" id="wsS-dp-P1F"/>
+                                    <constraint firstAttribute="bottom" secondItem="igl-pp-oSL" secondAttribute="bottom" constant="44" id="wsS-dp-P1F"/>
                                 </constraints>
                             </view>
+                            <label opaque="NO" userInteractionEnabled="NO" contentMode="left" horizontalHuggingPriority="251" verticalHuggingPriority="251" text="Keep QR inside the bounds and then tap on the QR and wait for some seconds." textAlignment="center" lineBreakMode="tailTruncation" numberOfLines="2" baselineAdjustment="alignBaselines" minimumFontSize="9" translatesAutoresizingMaskIntoConstraints="NO" id="46w-OT-20a">
+                                <rect key="frame" x="0.0" y="603" width="375" height="44"/>
+                                <fontDescription key="fontDescription" type="system" pointSize="17"/>
+                                <nil key="textColor"/>
+                                <nil key="highlightedColor"/>
+                            </label>
                         </subviews>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="calibratedWhite"/>
                         <constraints>
                             <constraint firstItem="KRb-Qz-rzm" firstAttribute="trailing" secondItem="Z56-B8-os7" secondAttribute="trailing" constant="16" id="2b0-ZO-lpd"/>
                             <constraint firstItem="KRb-Qz-rzm" firstAttribute="bottom" secondItem="TkI-zp-bum" secondAttribute="bottom" constant="72" id="8Mm-ei-qvx"/>
+                            <constraint firstItem="46w-OT-20a" firstAttribute="leading" secondItem="KRb-Qz-rzm" secondAttribute="leading" id="MRG-3b-0w5"/>
+                            <constraint firstItem="KRb-Qz-rzm" firstAttribute="bottom" secondItem="46w-OT-20a" secondAttribute="bottom" constant="20" id="MYT-W0-Tcg"/>
                             <constraint firstItem="TkI-zp-bum" firstAttribute="top" secondItem="Z56-B8-os7" secondAttribute="bottom" constant="58" id="NvM-0U-7Kn"/>
-                            <constraint firstItem="Z56-B8-os7" firstAttribute="top" secondItem="KRb-Qz-rzm" secondAttribute="top" constant="16" id="eWk-Ev-x5a"/>
+                            <constraint firstItem="46w-OT-20a" firstAttribute="top" secondItem="TkI-zp-bum" secondAttribute="bottom" constant="8" id="Rp4-0P-IaB"/>
+                            <constraint firstItem="46w-OT-20a" firstAttribute="trailing" secondItem="KRb-Qz-rzm" secondAttribute="trailing" id="W8d-mG-VlV"/>
+                            <constraint firstItem="Z56-B8-os7" firstAttribute="top" secondItem="KRb-Qz-rzm" secondAttribute="top" constant="32" id="eWk-Ev-x5a"/>
                             <constraint firstItem="TkI-zp-bum" firstAttribute="leading" secondItem="KRb-Qz-rzm" secondAttribute="leading" id="jgZ-wh-KVp"/>
                             <constraint firstItem="Z56-B8-os7" firstAttribute="leading" secondItem="KRb-Qz-rzm" secondAttribute="leading" constant="16" id="kc8-Gh-6mv"/>
                             <constraint firstItem="TkI-zp-bum" firstAttribute="trailing" secondItem="KRb-Qz-rzm" secondAttribute="trailing" id="oVQ-nW-Jel"/>
@@ -237,8 +263,9 @@
                     <navigationItem key="navigationItem" title="QR" id="eBo-A4-IcV"/>
                     <connections>
                         <outlet property="box" destination="Z56-B8-os7" id="9c4-JA-vJo"/>
+                        <outlet property="instruction" destination="46w-OT-20a" id="2Zb-Vi-MW8"/>
                         <outlet property="label" destination="TkI-zp-bum" id="iaK-I9-2sl"/>
-                        <segue destination="BYZ-38-t0r" kind="show" identifier="innav" id="nK9-4J-ZnX"/>
+                        <outlet property="segueButton" destination="NSu-93-6ZI" id="ggM-WN-ueC"/>
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="Y7E-EY-Dtt" userLabel="First Responder" sceneMemberID="firstResponder"/>
@@ -253,6 +280,7 @@
                     <navigationBar key="navigationBar" contentMode="scaleToFill" insetsLayoutMarginsFromSafeArea="NO" id="PXg-9l-ck2">
                         <rect key="frame" x="0.0" y="20" width="375" height="44"/>
                         <autoresizingMask key="autoresizingMask"/>
+                        <color key="barTintColor" red="1" green="1" blue="1" alpha="0.0" colorSpace="calibratedRGB"/>
                     </navigationBar>
                     <nil name="viewControllers"/>
                     <connections>

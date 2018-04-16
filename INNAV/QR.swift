@@ -25,8 +25,6 @@ class QR: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
     override func viewDidLoad() {
         super.viewDidLoad()
         
-        
-        
         view.backgroundColor = UIColor.black
         captureSession = AVCaptureSession()
         

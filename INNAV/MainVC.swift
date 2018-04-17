@@ -10,8 +10,9 @@ import UIKit
 import ARKit
 import GameplayKit
 import Vision
+import Placenote
 
-class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
+class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate,PNDelegate {
     
     @IBOutlet weak var sceneView: ARSCNView!
     @IBOutlet weak var drawBtn: UIButton!
@@ -19,6 +20,10 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     @IBOutlet weak var addPOIBtn: UIButton!
     @IBOutlet weak var pointer: UILabel!
     @IBOutlet var qrView: QRView!
+    @IBOutlet weak var startMap: UIButton!
+    @IBOutlet weak var saveMap: UIButton!
+    @IBOutlet weak var loadMap: UIButton!
+    @IBOutlet weak var statusLabel: UILabel!
     
     
     let configuration = ARWorldTrackingConfiguration()
@@ -58,9 +63,13 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     let impact = UIImpactFeedbackGenerator(style:.heavy)
     var setOriginCount = 0
     var mapName = String()
-    
+    //Placenode
+    private var camManager: CameraManager? = nil;
+    private var ptViz: FeaturePointVisualizer? = nil;
+    private var placenoteSessionRunning: Bool = false
+
     //
-    // MARK: ViewDelegate Methods //
+    // MARK:- ViewDelegate Methods
     //
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -68,11 +77,17 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         self.navigationController?.setNavigationBarHidden(true, animated: true)
         self.navigationController?.hidesBarsOnSwipe = true
         setupSceneView()
-        setupQRView()
+//        setupQRView()
         poiName.append("Garrage X")
         poiName.append("Cafe")
         mapName = UserDefaults.standard.string(forKey: "mapName")!
         
+        
+        ptViz = FeaturePointVisualizer(inputScene: sceneView.scene);
+        ptViz?.enableFeaturePoints()
+        if let camera: SCNNode = sceneView?.pointOfView {
+            camManager = CameraManager(scene: sceneView.scene, cam: camera)
+        }
     }
     override func viewWillDisappear(_ animated: Bool) {
         super.viewWillDisappear(animated)
@@ -80,26 +95,50 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         // Pause the view's session
         self.sceneView.session.pause()
     }
-    
-    //     MARK: - ARSCNViewDelegate
-    
-    func renderer(_ renderer: SCNSceneRenderer, nodeFor anchor: ARAnchor) -> SCNNode? {
+    //
+    //MARK: - PNDelegate Methods
+    //
+    //Receive a pose update when a new pose is calculated
+    func onPose(_ outputPose: matrix_float4x4, _ arkitPose: matrix_float4x4) -> Void {
         
-        // If this is our anchor, create a node
-        if self.detectedDataAnchor?.identifier == anchor.identifier {
-            
-            let QRSphere = SCNNode(geometry: SCNSphere(radius: 0.05))
-            QRSphere.geometry?.firstMaterial?.diffuse.contents = UIImage(named: "grid")
-            
-            //             Set its position based off the anchor
-            QRSphere.transform = SCNMatrix4(anchor.transform)
-            
-            
-            return QRSphere
-        }
-        
-        return SCNNode()
     }
+    
+    //Receive a status update when the status changes
+    func onStatusChange(_ prevStatus: LibPlacenote.MappingStatus, _ currStatus: LibPlacenote.MappingStatus) -> Void {
+        if (prevStatus == LibPlacenote.MappingStatus.lost && currStatus == LibPlacenote.MappingStatus.running) {
+            
+            _ = retrieveFromFile()
+            _ = retrievePOIData()
+            
+            print("Map Found!")
+            self.statusLabel.text = "Map Found!"
+            LibPlacenote.instance.stopSession()
+        }
+//        if prevStatus == LibPlacenote.MappingStatus.running && currStatus != LibPlacenote.MappingStatus.running { //just lost localization
+//            print ("Just lost")
+//            if placenoteSessionRunning {
+//                self.statusLabel.text = "Moved too fast. Map Lost"
+//            }
+//        }
+        
+    }
+    //
+    //     MARK: - ARSCNViewDelegate Methods
+    //
+//    func renderer(_ renderer: SCNSceneRenderer, nodeFor anchor: ARAnchor) -> SCNNode? {
+//        
+//        // If this is our anchor, create a node
+//        if self.detectedDataAnchor?.identifier == anchor.identifier {
+//    
+//            let QRSphere = SCNNode(geometry: SCNSphere(radius: 0.05))
+//            QRSphere.geometry?.firstMaterial?.diffuse.contents = UIImage(named: "grid")
+//            //             Set its position based off the anchor
+//            QRSphere.transform = SCNMatrix4(anchor.transform)
+//            return QRSphere
+//        }
+//        
+//        return SCNNode()
+//    }
     
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
         
@@ -151,107 +190,114 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     
     public func session(_ session: ARSession, didUpdate frame: ARFrame) {
         
+        let image: CVPixelBuffer = frame.capturedImage
+        let pose: matrix_float4x4 = frame.camera.transform
         
-        // Only run one Vision request at a time
-        if self.processing {
-            return
-        }
-        self.processing = true
-        
-        // Create a Barcode Detection Request
-        let request = VNDetectBarcodesRequest { (request, error) in
-            
-            // Get the first result out of the results, if there are any
-            if let results = request.results, let result = results.first as? VNBarcodeObservation {
-                
-                // Get the bounding box for the bar code and find the center
-                var rect = result.boundingBox
-                
-                // Flip coordinates
-                rect = rect.applying(CGAffineTransform(scaleX: 1, y: -1))
-                rect = rect.applying(CGAffineTransform(translationX: 0, y: 1))
-                
-                // Get center
-                let center = CGPoint(x: rect.midX, y: rect.midY)
-                
-                // Go back to the main thread
-                DispatchQueue.main.async {
-                    
-                    // Perform a hit test on the ARFrame to find a surface
-                    let hitTestResults = frame.hitTest(center, types: [.featurePoint/*, .estimatedHorizontalPlane, .existingPlane, .existingPlaneUsingExtent*/] )
-                    
-                    // If we have a result, process it
-                    if let hitTestResult = hitTestResults.first {
-                        
-                        // If we already have an anchor, update the position of the attached node
-                        if let detectedDataAnchor = self.detectedDataAnchor,
-                            let node = self.sceneView.node(for: detectedDataAnchor) {
-                            
-                            node.transform = SCNMatrix4(hitTestResult.worldTransform)
-                            
-                            if #available(iOS 11.3, *), self.setOriginCount == 10{
-                                
-                                var tempTransform = self.originTransform
-                                tempTransform.m41 = node.transform.m41
-                                tempTransform.m42 = node.transform.m42
-                                tempTransform.m43 = node.transform.m43
-                                
-                                self.sceneView.session.setWorldOrigin(relativeTransform: matrix_float4x4(tempTransform))
-                                
-                                _ = self.retrieveFromFile()
-                                _ = self.retrievePOIData()
-                                
-                                self.drawBtn.isHidden = false
-                                self.pointer.isHidden = false
-                                self.addPOIBtn.isHidden = false
-                                self.navigateBtn.isHidden = false
-                                self.qrView.removeFromSuperview()
-                                self.impact.impactOccurred()
-                            } else {
-                                // Fallback on earlier versions
-                            }
-                            self.setOriginCount += 1
-                            
-                            
-                        } else {
-                            // Create an anchor. The node will be created in delegate methods
-                            self.detectedDataAnchor = ARAnchor(transform: hitTestResult.worldTransform)
-                            self.sceneView.session.add(anchor: self.detectedDataAnchor!)
-                        }
-                    }
-                    
-                    // Set processing flag off
-                    self.processing = false
-                }
-                
-            } else {
-                // Set processing flag off
-                self.processing = false
-            }
-        }
-        
-        // Process the request in the background
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                // Set it to recognize QR code only
-                request.symbologies = [.QR]
-                
-                // Create a request handler using the captured image from the ARFrame
-                let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: frame.capturedImage,
-                                                                options: [:])
-                // Process the request
-                try imageRequestHandler.perform([request])
-            } catch {
-                
-            }
+        if (placenoteSessionRunning) {
+            LibPlacenote.instance.setFrame(image: image, pose: pose)
+            //print("sent placenote a frame")
         }
     }
+//
+//
+//        // Only run one Vision request at a time
+//        if self.processing {
+//            return
+//        }
+//        self.processing = true
+//
+//        // Create a Barcode Detection Request
+//        let request = VNDetectBarcodesRequest { (request, error) in
+//
+//            // Get the first result out of the results, if there are any
+//            if let results = request.results, let result = results.first as? VNBarcodeObservation {
+//
+//                // Get the bounding box for the bar code and find the center
+//                var rect = result.boundingBox
+//
+//                // Flip coordinates
+//                rect = rect.applying(CGAffineTransform(scaleX: 1, y: -1))
+//                rect = rect.applying(CGAffineTransform(translationX: 0, y: 1))
+//
+//                // Get center
+//                let center = CGPoint(x: rect.midX, y: rect.midY)
+//
+//                // Go back to the main thread
+//                DispatchQueue.main.async {
+//
+//                    // Perform a hit test on the ARFrame to find a surface
+//                    let hitTestResults = frame.hitTest(center, types: [.featurePoint/*, .estimatedHorizontalPlane, .existingPlane, .existingPlaneUsingExtent*/] )
+//
+//                    // If we have a result, process it
+//                    if let hitTestResult = hitTestResults.first {
+//
+//                        // If we already have an anchor, update the position of the attached node
+//                        if let detectedDataAnchor = self.detectedDataAnchor,
+//                            let node = self.sceneView.node(for: detectedDataAnchor) {
+//
+//                            node.transform = SCNMatrix4(hitTestResult.worldTransform)
+//
+//                            if #available(iOS 11.3, *), self.setOriginCount == 10{
+//
+//                                var tempTransform = self.originTransform
+//                                tempTransform.m41 = node.transform.m41
+//                                tempTransform.m42 = node.transform.m42
+//                                tempTransform.m43 = node.transform.m43
+//
+//                                self.sceneView.session.setWorldOrigin(relativeTransform: matrix_float4x4(tempTransform))
+//
+//                                _ = self.retrieveFromFile()
+//                                _ = self.retrievePOIData()
+//
+//                                self.drawBtn.isHidden = false
+//                                self.pointer.isHidden = false
+//                                self.addPOIBtn.isHidden = false
+//                                self.navigateBtn.isHidden = false
+//                                self.qrView.removeFromSuperview()
+//                                self.impact.impactOccurred()
+//                            } else {
+//                                // Fallback on earlier versions
+//                            }
+//                            self.setOriginCount += 1
+//
+//
+//                        } else {
+//                            // Create an anchor. The node will be created in delegate methods
+//                            self.detectedDataAnchor = ARAnchor(transform: hitTestResult.worldTransform)
+//                            self.sceneView.session.add(anchor: self.detectedDataAnchor!)
+//                        }
+//                    }
+//
+//                    // Set processing flag off
+//                    self.processing = false
+//                }
+//
+//            } else {
+//                // Set processing flag off
+//                self.processing = false
+//            }
+//        }
+//
+//        // Process the request in the background
+//        DispatchQueue.global(qos: .userInitiated).async {
+//            do {
+//                // Set it to recognize QR code only
+//                request.symbologies = [.QR]
+//
+//                // Create a request handler using the captured image from the ARFrame
+//                let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: frame.capturedImage,
+//                                                                options: [:])
+//                // Process the request
+//                try imageRequestHandler.perform([request])
+//            } catch {
+//
+//            }
+//        }
+//    }
     
-    
+    //
     // MARK: - Button Actions
-    
-    
-    
+    //
     @IBAction func StartAction(_ sender: Any) {
         
         if tempNodeFlag {
@@ -301,6 +347,73 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         self.present(alertCtrlr,animated:true,completion:nil)
         
     }
+    @IBAction func startMap(_ sender: Any) {
+        
+        LibPlacenote.instance.startSession()
+        placenoteSessionRunning = true
+        statusLabel.text = "Mapping Session Started..."
+    }
+    
+    @IBAction func saveMap(_ sender: Any) {
+        
+        // start mapping session.
+        if (!placenoteSessionRunning)
+        {
+//            placenoteSessionRunning = true
+//            LibPlacenote.instance.startSession()
+            statusLabel.text = "Mapping Session Not Running..."
+        }
+        else
+        {
+            placenoteSessionRunning = false
+            
+            //save the map and stop session
+            LibPlacenote.instance.saveMap(savedCb: { (mapID: String?) -> Void in
+                print ("MapId: " + mapID!)
+                self.statusLabel.text = mapID!
+                
+                
+                
+                var dict = UserDefaults.standard.object(forKey: "mapList") as! [String:String]
+                dict[self.mapName] = mapID
+                print(dict)
+                UserDefaults.standard.setValue(dict, forKey: "mapList")
+                
+                LibPlacenote.instance.stopSession()  },
+                                          
+                                          uploadProgressCb: {(completed: Bool, faulted: Bool, percentage: Float) -> Void in
+                                            print("Map Uploading...")
+                                            self.statusLabel.text = "Map Uploading..."
+                                            if(completed){
+                                                print("Map upload done!!!")
+                                                self.statusLabel.text = "Map upload done!!!"
+                                            }
+            })
+        }
+    }
+    
+    @IBAction func loadMap(_ sender: Any) {
+        
+        if (!placenoteSessionRunning)
+        {
+            
+            let dict = UserDefaults.standard.object(forKey: "mapList") as! [String:String]
+            
+            LibPlacenote.instance.loadMap(mapId: dict[mapName]!,
+                                          downloadProgressCb: {(completed: Bool, faulted: Bool, percentage: Float) -> Void in
+                                            if (completed) {
+                                                self.placenoteSessionRunning = true
+                                                LibPlacenote.instance.startSession()
+                                                print("Completed loading!")
+                                                self.statusLabel.text = "Completed loading and detecting environment..."
+                                            }
+            })
+        }
+        else {
+            self.statusLabel.text = "Stop mapping session before loading !!!"
+        }
+    }
+    
     // MARK: - Custom Methods
     
     func drawTempNode(hitTestResult:ARHitTestResult) {
@@ -652,10 +765,8 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
                 self.poiCounter += 1
                 let node1 = self.getVector3FromString(str: data)
                 self.drawPointOfInterestNodeFromfile(position: node1)
-                
             }
         }
-        
         return true
     }
 
@@ -725,7 +836,6 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     func setupSceneView() {
         
         self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints,ARSCNDebugOptions.showWorldOrigin]
-        
         self.sceneView.autoenablesDefaultLighting = true
         
         if #available(iOS 11.3, *) {
@@ -733,11 +843,12 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         } else {
             // Fallback on earlier versions
         }
-        configuration.worldAlignment = .gravityAndHeading
+        configuration.worldAlignment = .gravity
         sceneView.delegate = self
         sceneView.session.delegate = self
         
         self.sceneView.session.run(configuration)
+        LibPlacenote.instance.multiDelegate += self
         
         self.sceneView.scene.rootNode.addChildNode(rootPathNode)
         self.sceneView.scene.rootNode.addChildNode(rootPOINode)

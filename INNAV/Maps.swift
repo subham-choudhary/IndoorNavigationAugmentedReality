@@ -19,6 +19,7 @@ class Maps: UIViewController,UITableViewDataSource,UITableViewDelegate,UITextFie
     @IBOutlet weak var newMapTextField: UITextField!
     @IBOutlet weak var tableView: UITableView!
     
+    var mapDictionary = [String:String]()
     var mapArray = [String]()
     let label = UILabel()
     
@@ -28,9 +29,13 @@ class Maps: UIViewController,UITableViewDataSource,UITableViewDelegate,UITextFie
         newMapTextField.isHidden = true
         newMapTextField.delegate = self
         newMapTextField.returnKeyType = .done
-        guard let mapArray = UserDefaults.standard.array(forKey: "mapList")
+        guard let mapDict = UserDefaults.standard.object(forKey: "mapList")
             else {return}
-        self.mapArray = mapArray as! [String]
+        self.mapDictionary = mapDict as! [String:String]
+        for i in mapDictionary {
+            
+            mapArray.append(i.key)
+        }
     }
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if mapArray.count == 0 {
@@ -61,7 +66,7 @@ class Maps: UIViewController,UITableViewDataSource,UITableViewDelegate,UITextFie
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         UserDefaults.standard.set(mapArray[indexPath.row], forKey: "mapName")
-        UserDefaults.standard.set(mapArray, forKey: "mapList")
+        UserDefaults.standard.set(mapDictionary, forKey: "mapList")
     }
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         
@@ -70,9 +75,10 @@ class Maps: UIViewController,UITableViewDataSource,UITableViewDelegate,UITextFie
             removeItemFromDocDir(name: mapArray[indexPath.row])
             removeItemFromDocDir(name: mapArray[indexPath.row] + "_poi")
             
+            self.mapDictionary.removeValue(forKey: mapArray[indexPath.row])
             self.mapArray.remove(at: indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .fade)
-            UserDefaults.standard.set(mapArray, forKey: "mapList")
+            UserDefaults.standard.set(mapDictionary, forKey: "mapList")
             
         }
     }
@@ -87,7 +93,8 @@ class Maps: UIViewController,UITableViewDataSource,UITableViewDelegate,UITextFie
         
         newMapTextField.isHidden = true
         mapArray.insert(newMapTextField.text!, at: 0)
-        UserDefaults.standard.set(mapArray, forKey: "mapList")
+        mapDictionary[mapArray.first!] = ""
+        UserDefaults.standard.set(mapDictionary, forKey: "mapList")
         newMapTextField.text = ""
         textField.resignFirstResponder()
         tableView.reloadData()

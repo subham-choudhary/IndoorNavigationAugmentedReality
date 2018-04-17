@@ -11,7 +11,6 @@
 		B90A55E1207E49850045AC83 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = B90A55E0207E49850045AC83 /* Assets.xcassets */; };
 		B90A55E3207E74920045AC83 /* LaunchScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90A55E2207E74920045AC83 /* LaunchScreen.swift */; };
 		B90A55E5207E92DF0045AC83 /* Maps.swift in Sources */ = {isa = PBXBuildFile; fileRef = B90A55E4207E92DF0045AC83 /* Maps.swift */; };
-		B90A55E9207E959B0045AC83 /* Maps.plist in Resources */ = {isa = PBXBuildFile; fileRef = B90A55E8207E959B0045AC83 /* Maps.plist */; };
 		B9194AE520750ED3008B3521 /* QR.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9194AE420750ED3008B3521 /* QR.swift */; };
 		B957FB9F2017B5EF00B7141C /* CylinderLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B957FB9E2017B5EF00B7141C /* CylinderLine.swift */; };
 		B95A98A42007A1940057878E /* Plane.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95A98A32007A1940057878E /* Plane.swift */; };
@@ -19,23 +18,53 @@
 		B9DBE9D82003C2D60092D69D /* MainVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DBE9D72003C2D60092D69D /* MainVC.swift */; };
 		B9DBE9DB2003C2D60092D69D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B9DBE9D92003C2D60092D69D /* Main.storyboard */; };
 		B9DBE9E02003C2D60092D69D /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B9DBE9DE2003C2D60092D69D /* LaunchScreen.storyboard */; };
+		B9DC2DDE208511AE00FCD6D8 /* MulticastDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DC2DD5208511AE00FCD6D8 /* MulticastDelegate.swift */; };
+		B9DC2DDF208511AE00FCD6D8 /* LICENSE in Resources */ = {isa = PBXBuildFile; fileRef = B9DC2DD6208511AE00FCD6D8 /* LICENSE */; };
+		B9DC2DE0208511AE00FCD6D8 /* LibPlacenote.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DC2DD7208511AE00FCD6D8 /* LibPlacenote.swift */; };
+		B9DC2DE2208511AE00FCD6D8 /* FeaturePointVisualizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DC2DDB208511AE00FCD6D8 /* FeaturePointVisualizer.swift */; };
+		B9DC2DE3208511AE00FCD6D8 /* CameraManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DC2DDC208511AE00FCD6D8 /* CameraManager.swift */; };
+		B9DC2DE4208511AE00FCD6D8 /* Data.bin in Resources */ = {isa = PBXBuildFile; fileRef = B9DC2DDD208511AE00FCD6D8 /* Data.bin */; };
+		B9DC2DE5208512A900FCD6D8 /* Placenote.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = B9DC2DDA208511AE00FCD6D8 /* Placenote.framework */; };
+		B9DC2DE6208512A900FCD6D8 /* Placenote.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = B9DC2DDA208511AE00FCD6D8 /* Placenote.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		B9DC2DE7208512A900FCD6D8 /* Embed Frameworks */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 10;
+			files = (
+				B9DC2DE6208512A900FCD6D8 /* Placenote.framework in Embed Frameworks */,
+			);
+			name = "Embed Frameworks";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
 		B90A55DC207BB46F0045AC83 /* QRView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QRView.swift; sourceTree = "<group>"; };
 		B90A55E0207E49850045AC83 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		B90A55E2207E74920045AC83 /* LaunchScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchScreen.swift; sourceTree = "<group>"; };
 		B90A55E4207E92DF0045AC83 /* Maps.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Maps.swift; sourceTree = "<group>"; };
-		B90A55E8207E959B0045AC83 /* Maps.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Maps.plist; sourceTree = "<group>"; };
 		B9194AE420750ED3008B3521 /* QR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QR.swift; sourceTree = "<group>"; };
 		B957FB9E2017B5EF00B7141C /* CylinderLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CylinderLine.swift; sourceTree = "<group>"; };
 		B95A98A32007A1940057878E /* Plane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plane.swift; sourceTree = "<group>"; };
+		B985671B20850BCF00030C2F /* INNAV-Bridging-Header.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = "INNAV-Bridging-Header.h"; sourceTree = "<group>"; };
 		B9DBE9D22003C2D60092D69D /* INNAV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = INNAV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B9DBE9D52003C2D60092D69D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B9DBE9D72003C2D60092D69D /* MainVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainVC.swift; sourceTree = "<group>"; };
 		B9DBE9DA2003C2D60092D69D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/Main.storyboard; sourceTree = "<group>"; };
 		B9DBE9DF2003C2D60092D69D /* Base */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = Base; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		B9DBE9E12003C2D60092D69D /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		B9DC2DD5208511AE00FCD6D8 /* MulticastDelegate.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MulticastDelegate.swift; sourceTree = "<group>"; };
+		B9DC2DD6208511AE00FCD6D8 /* LICENSE */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = LICENSE; sourceTree = "<group>"; };
+		B9DC2DD7208511AE00FCD6D8 /* LibPlacenote.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = LibPlacenote.swift; sourceTree = "<group>"; };
+		B9DC2DD9208511AE00FCD6D8 /* PlacenoteSDK-Bridging-Header.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = "PlacenoteSDK-Bridging-Header.h"; sourceTree = "<group>"; };
+		B9DC2DDA208511AE00FCD6D8 /* Placenote.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; path = Placenote.framework; sourceTree = "<group>"; };
+		B9DC2DDB208511AE00FCD6D8 /* FeaturePointVisualizer.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = FeaturePointVisualizer.swift; sourceTree = "<group>"; };
+		B9DC2DDC208511AE00FCD6D8 /* CameraManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = CameraManager.swift; sourceTree = "<group>"; };
+		B9DC2DDD208511AE00FCD6D8 /* Data.bin */ = {isa = PBXFileReference; lastKnownFileType = archive.macbinary; path = Data.bin; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,6 +72,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B9DC2DE5208512A900FCD6D8 /* Placenote.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -53,6 +83,7 @@
 			isa = PBXGroup;
 			children = (
 				B9DBE9D42003C2D60092D69D /* INNAV */,
+				B9DC2DD4208511AE00FCD6D8 /* PlacenoteSDK */,
 				B9DBE9D32003C2D60092D69D /* Products */,
 			);
 			sourceTree = "<group>";
@@ -80,9 +111,32 @@
 				B9194AE420750ED3008B3521 /* QR.swift */,
 				B9DBE9DE2003C2D60092D69D /* LaunchScreen.storyboard */,
 				B9DBE9E12003C2D60092D69D /* Info.plist */,
-				B90A55E8207E959B0045AC83 /* Maps.plist */,
+				B985671B20850BCF00030C2F /* INNAV-Bridging-Header.h */,
 			);
 			path = INNAV;
+			sourceTree = "<group>";
+		};
+		B9DC2DD4208511AE00FCD6D8 /* PlacenoteSDK */ = {
+			isa = PBXGroup;
+			children = (
+				B9DC2DD5208511AE00FCD6D8 /* MulticastDelegate.swift */,
+				B9DC2DD6208511AE00FCD6D8 /* LICENSE */,
+				B9DC2DD7208511AE00FCD6D8 /* LibPlacenote.swift */,
+				B9DC2DD8208511AE00FCD6D8 /* include */,
+				B9DC2DDA208511AE00FCD6D8 /* Placenote.framework */,
+				B9DC2DDB208511AE00FCD6D8 /* FeaturePointVisualizer.swift */,
+				B9DC2DDC208511AE00FCD6D8 /* CameraManager.swift */,
+				B9DC2DDD208511AE00FCD6D8 /* Data.bin */,
+			);
+			path = PlacenoteSDK;
+			sourceTree = "<group>";
+		};
+		B9DC2DD8208511AE00FCD6D8 /* include */ = {
+			isa = PBXGroup;
+			children = (
+				B9DC2DD9208511AE00FCD6D8 /* PlacenoteSDK-Bridging-Header.h */,
+			);
+			path = include;
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -95,6 +149,7 @@
 				B9DBE9CE2003C2D60092D69D /* Sources */,
 				B9DBE9CF2003C2D60092D69D /* Frameworks */,
 				B9DBE9D02003C2D60092D69D /* Resources */,
+				B9DC2DE7208512A900FCD6D8 /* Embed Frameworks */,
 			);
 			buildRules = (
 			);
@@ -117,6 +172,7 @@
 				TargetAttributes = {
 					B9DBE9D12003C2D60092D69D = {
 						CreatedOnToolsVersion = 9.2;
+						LastSwiftMigration = 0920;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -145,9 +201,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				B9DBE9E02003C2D60092D69D /* LaunchScreen.storyboard in Resources */,
-				B90A55E9207E959B0045AC83 /* Maps.plist in Resources */,
 				B90A55E1207E49850045AC83 /* Assets.xcassets in Resources */,
+				B9DC2DDF208511AE00FCD6D8 /* LICENSE in Resources */,
 				B9DBE9DB2003C2D60092D69D /* Main.storyboard in Resources */,
+				B9DC2DE4208511AE00FCD6D8 /* Data.bin in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -159,6 +216,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				B90A55E3207E74920045AC83 /* LaunchScreen.swift in Sources */,
+				B9DC2DE0208511AE00FCD6D8 /* LibPlacenote.swift in Sources */,
 				B9DBE9D82003C2D60092D69D /* MainVC.swift in Sources */,
 				B90A55DD207BB46F0045AC83 /* QRView.swift in Sources */,
 				B95A98A42007A1940057878E /* Plane.swift in Sources */,
@@ -166,6 +224,9 @@
 				B9194AE520750ED3008B3521 /* QR.swift in Sources */,
 				B90A55E5207E92DF0045AC83 /* Maps.swift in Sources */,
 				B957FB9F2017B5EF00B7141C /* CylinderLine.swift in Sources */,
+				B9DC2DDE208511AE00FCD6D8 /* MulticastDelegate.swift in Sources */,
+				B9DC2DE3208511AE00FCD6D8 /* CameraManager.swift in Sources */,
+				B9DC2DE2208511AE00FCD6D8 /* FeaturePointVisualizer.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -302,14 +363,23 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = KEKP77V86B;
+				ENABLE_BITCODE = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/PlacenoteSDK",
+				);
+				HEADER_SEARCH_PATHS = /Users/schph/_workarea/INNAV/PlacenoteSDK/Placenote.framework/Headers;
 				INFOPLIST_FILE = "$(SRCROOT)/INNAV/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.darhk.ARINNavv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "INNAV/INNAV-Bridging-Header.h";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};
@@ -319,14 +389,22 @@
 			isa = XCBuildConfiguration;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CLANG_ENABLE_MODULES = YES;
 				"CODE_SIGN_IDENTITY[sdk=iphoneos*]" = "iPhone Developer";
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = KEKP77V86B;
+				ENABLE_BITCODE = NO;
+				FRAMEWORK_SEARCH_PATHS = (
+					"$(inherited)",
+					"$(PROJECT_DIR)/PlacenoteSDK",
+				);
+				HEADER_SEARCH_PATHS = /Users/schph/_workarea/INNAV/PlacenoteSDK/Placenote.framework/Headers;
 				INFOPLIST_FILE = "$(SRCROOT)/INNAV/Info.plist";
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
 				PRODUCT_BUNDLE_IDENTIFIER = com.darhk.ARINNavv;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
+				SWIFT_OBJC_BRIDGING_HEADER = "INNAV/INNAV-Bridging-Header.h";
 				SWIFT_VERSION = 4.0;
 				TARGETED_DEVICE_FAMILY = "1,2";
 			};

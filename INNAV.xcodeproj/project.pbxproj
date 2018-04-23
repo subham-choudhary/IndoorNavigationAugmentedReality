@@ -15,6 +15,7 @@
 		B9194AE520750ED3008B3521 /* QR.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9194AE420750ED3008B3521 /* QR.swift */; };
 		B957FB9F2017B5EF00B7141C /* CylinderLine.swift in Sources */ = {isa = PBXBuildFile; fileRef = B957FB9E2017B5EF00B7141C /* CylinderLine.swift */; };
 		B95A98A42007A1940057878E /* Plane.swift in Sources */ = {isa = PBXBuildFile; fileRef = B95A98A32007A1940057878E /* Plane.swift */; };
+		B9A8F7A420872CE500F16BC4 /* Utility.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9A8F7A320872CE500F16BC4 /* Utility.swift */; };
 		B9DBE9D62003C2D60092D69D /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DBE9D52003C2D60092D69D /* AppDelegate.swift */; };
 		B9DBE9D82003C2D60092D69D /* MainVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = B9DBE9D72003C2D60092D69D /* MainVC.swift */; };
 		B9DBE9DB2003C2D60092D69D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B9DBE9D92003C2D60092D69D /* Main.storyboard */; };
@@ -30,6 +31,7 @@
 		B9194AE420750ED3008B3521 /* QR.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QR.swift; sourceTree = "<group>"; };
 		B957FB9E2017B5EF00B7141C /* CylinderLine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CylinderLine.swift; sourceTree = "<group>"; };
 		B95A98A32007A1940057878E /* Plane.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Plane.swift; sourceTree = "<group>"; };
+		B9A8F7A320872CE500F16BC4 /* Utility.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Utility.swift; sourceTree = "<group>"; };
 		B9DBE9D22003C2D60092D69D /* INNAV.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = INNAV.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		B9DBE9D52003C2D60092D69D /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		B9DBE9D72003C2D60092D69D /* MainVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainVC.swift; sourceTree = "<group>"; };
@@ -74,6 +76,7 @@
 				B90A55E4207E92DF0045AC83 /* Maps.swift */,
 				B90A55DC207BB46F0045AC83 /* QRView.swift */,
 				B9DBE9D72003C2D60092D69D /* MainVC.swift */,
+				B9A8F7A320872CE500F16BC4 /* Utility.swift */,
 				B90A55E0207E49850045AC83 /* Assets.xcassets */,
 				B957FB9E2017B5EF00B7141C /* CylinderLine.swift */,
 				B95A98A32007A1940057878E /* Plane.swift */,
@@ -160,6 +163,7 @@
 			files = (
 				B90A55E3207E74920045AC83 /* LaunchScreen.swift in Sources */,
 				B9DBE9D82003C2D60092D69D /* MainVC.swift in Sources */,
+				B9A8F7A420872CE500F16BC4 /* Utility.swift in Sources */,
 				B90A55DD207BB46F0045AC83 /* QRView.swift in Sources */,
 				B95A98A42007A1940057878E /* Plane.swift in Sources */,
 				B9DBE9D62003C2D60092D69D /* AppDelegate.swift in Sources */,

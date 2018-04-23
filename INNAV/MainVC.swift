@@ -36,16 +36,14 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     var showFloorMesh = false
     
     var pathGraph = GKGraph()
-    let origin = SCNVector3Make(0, 0, 0)
+    var origin = SCNVector3Make(0, 0, 0)
     var originTransform = SCNMatrix4()
-    var shouldSetTempYAxis = true
-    var tempYAxis = Float()
     
     var stringPathMap = [String:[String]]()
     var stringPOIMap = [String:[String]]()
     
     var dictOfNodes = [String:GKGraphNode2D]()
-    var poiNode = [String]()
+    var poiPositionStringArray = [String]()
     var strNode = String()
     var cameraLocation = SCNVector3()
     var poiName = [String]()
@@ -58,6 +56,12 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     let impact = UIImpactFeedbackGenerator(style:.heavy)
     var setOriginCount = 0
     var mapName = String()
+    
+    var QRSphere = SCNNode()
+    var exitQRScan = false
+    
+    
+    let utility = Utility()
     
     //
     // MARK: ViewDelegate Methods //
@@ -88,13 +92,11 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         // If this is our anchor, create a node
         if self.detectedDataAnchor?.identifier == anchor.identifier {
             
-            let QRSphere = SCNNode(geometry: SCNSphere(radius: 0.05))
-            QRSphere.geometry?.firstMaterial?.diffuse.contents = UIImage(named: "grid")
+            QRSphere = SCNNode(geometry: SCNSphere(radius: 0.05))
+            QRSphere.geometry?.firstMaterial?.diffuse.contents = UIColor.blue
             
             //             Set its position based off the anchor
             QRSphere.transform = SCNMatrix4(anchor.transform)
-            
-            
             return QRSphere
         }
         
@@ -103,12 +105,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
         
-        if shouldSetTempYAxis
-        {
-            let tempTransform = anchor.transform.columns.3
-            tempYAxis = tempTransform.y
-            shouldSetTempYAxis = false
-        }
+        
         if showFloorMesh{
             DispatchQueue.main.async {
                 if let planeAnchor = anchor as? ARPlaneAnchor {
@@ -150,120 +147,25 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     // MARK: - ARSessionDelegate
     
     public func session(_ session: ARSession, didUpdate frame: ARFrame) {
-        
-        
-        // Only run one Vision request at a time
-        if self.processing {
-            return
-        }
-        self.processing = true
-        
-        // Create a Barcode Detection Request
-        let request = VNDetectBarcodesRequest { (request, error) in
-            
-            // Get the first result out of the results, if there are any
-            if let results = request.results, let result = results.first as? VNBarcodeObservation {
-                
-                // Get the bounding box for the bar code and find the center
-                var rect = result.boundingBox
-                
-                // Flip coordinates
-                rect = rect.applying(CGAffineTransform(scaleX: 1, y: -1))
-                rect = rect.applying(CGAffineTransform(translationX: 0, y: 1))
-                
-                // Get center
-                let center = CGPoint(x: rect.midX, y: rect.midY)
-                
-                // Go back to the main thread
-                DispatchQueue.main.async {
-                    
-                    // Perform a hit test on the ARFrame to find a surface
-                    let hitTestResults = frame.hitTest(center, types: [.featurePoint/*, .estimatedHorizontalPlane, .existingPlane, .existingPlaneUsingExtent*/] )
-                    
-                    // If we have a result, process it
-                    if let hitTestResult = hitTestResults.first {
-                        
-                        // If we already have an anchor, update the position of the attached node
-                        if let detectedDataAnchor = self.detectedDataAnchor,
-                            let node = self.sceneView.node(for: detectedDataAnchor) {
-                            
-                            node.transform = SCNMatrix4(hitTestResult.worldTransform)
-                            
-                            if #available(iOS 11.3, *), self.setOriginCount == 10{
-                                
-                                var tempTransform = self.originTransform
-                                tempTransform.m41 = node.transform.m41
-                                tempTransform.m42 = node.transform.m42
-                                tempTransform.m43 = node.transform.m43
-                                
-                                self.sceneView.session.setWorldOrigin(relativeTransform: matrix_float4x4(tempTransform))
-                                
-                                _ = self.retrieveFromFile()
-                                _ = self.retrievePOIData()
-                                
-                                self.drawBtn.isHidden = false
-                                self.pointer.isHidden = false
-                                self.addPOIBtn.isHidden = false
-                                self.navigateBtn.isHidden = false
-                                self.qrView.removeFromSuperview()
-                                self.impact.impactOccurred()
-                            } else {
-                                // Fallback on earlier versions
-                            }
-                            self.setOriginCount += 1
-                            
-                            
-                        } else {
-                            // Create an anchor. The node will be created in delegate methods
-                            self.detectedDataAnchor = ARAnchor(transform: hitTestResult.worldTransform)
-                            self.sceneView.session.add(anchor: self.detectedDataAnchor!)
-                        }
-                    }
-                    
-                    // Set processing flag off
-                    self.processing = false
-                }
-                
-            } else {
-                // Set processing flag off
-                self.processing = false
-            }
-        }
-        
-        // Process the request in the background
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                // Set it to recognize QR code only
-                request.symbologies = [.QR]
-                
-                // Create a request handler using the captured image from the ARFrame
-                let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: frame.capturedImage,
-                                                                options: [:])
-                // Process the request
-                try imageRequestHandler.perform([request])
-            } catch {
-                
-            }
-        }
+        detectQRCode(frame: frame)
     }
     
-    
     // MARK: - Button Actions
-    
-    
-    
     @IBAction func StartAction(_ sender: Any) {
         
         if tempNodeFlag {
             
+            utility.setYAxisTo(value: pathNodes[1].position.y)
             pathNodes[0].position.y = pathNodes[1].position.y
-//            tempYAxis = pathNodes[0].position.y
-            addPathNodes(n1: pathNodes[0].position,n2: pathNodes[1].position)
+            
+//                        tempYAxis = pathNodes[0].position.y
+            addPathNodes(n1: pathNodes[0].position,n2: pathNodes[1].position, shouldSave: true)
             counter = 0
             tempNodeFlag = false
             addPOIBtn.isHidden = false
             removeTempNode()
             drawBtn.setTitle("Start", for: .normal)
+            
             
         } else {
             tempNodeFlag = true
@@ -285,13 +187,13 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         let action1 = UIAlertAction(title: poiName.first, style: .default) { (alertAction) in
             
             self.timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-                self?.navigateTo(destNode: (self?.poiNode.first!)!)
+                self?.navigateTo(destNode: (self?.poiPositionStringArray.first!)!)
             }
         }
         let action2 = UIAlertAction(title: poiName[1], style: .default) { (alertAction) in
             
             self.timer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { [weak self] _ in
-                self?.navigateTo(destNode: (self?.poiNode[1])!)
+                self?.navigateTo(destNode: (self?.poiPositionStringArray[1])!)
             }
             
         }
@@ -321,7 +223,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
             rootTempNode.addChildNode(node)
         }
     }
-    func addPathNodes(n1:SCNVector3, n2:SCNVector3) {
+    func addPathNodes(n1:SCNVector3, n2:SCNVector3, shouldSave:Bool) {
         
         var node1Position = n1
         var node2Position = n2
@@ -330,10 +232,10 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         rootPathNode.enumerateChildNodes({ (child, _) in
             
             // To merge path node less than 0.5 meters
-            if !isEqual(n1: origin, n2: child.position) {
+            if !utility.isEqual(n1: origin, n2: child.position) {
                 
-                let dist0 = distanceBetween(n1: n1, n2: child.position)
-                let dist1 = distanceBetween(n1: n2, n2: child.position)
+                let dist0 = utility.distanceBetween(n1: n1, n2: child.position)
+                let dist1 = utility.distanceBetween(n1: n2, n2: child.position)
                 if(dist0 <= 0.5){
                     node1Position = child.position
                     isNode1exists = true
@@ -345,7 +247,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
             }
         })
         drawPathNodeAndConnectingNode(node1Position: node1Position, node2Positon: node2Position)
-        mapNodesToStringDict(node1Positon: node1Position, node2Positon: node2Position, isNode1exists: isNode1exists, isNode2exists: isNode2exists)
+        mapNodesToStringDict(node1Positon: node1Position, node2Positon: node2Position, isNode1exists: isNode1exists, isNode2exists: isNode2exists, shouldSave: shouldSave)
         
         isNode1exists = false
         isNode2exists = false
@@ -374,7 +276,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
     }
     //TO map nodes into String Dictionary
     func mapNodesToStringDict (node1Positon:SCNVector3,node2Positon:SCNVector3,
-                               isNode1exists:Bool,isNode2exists:Bool ) {
+                               isNode1exists:Bool,isNode2exists:Bool, shouldSave:Bool) {
         
         let position1String = "\(node1Positon)"
         let position2String = "\(node2Positon)"
@@ -397,9 +299,12 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         } else { // Create new node
             stringPathMap[position2String] = [position1String]
         }
-        myQueue.async {
-            self.saveFile()
+        if shouldSave {
+            myQueue.async {
+                self.utility.saveFile(stringPathMap: self.stringPathMap, mapName: self.mapName)
+            }
         }
+        
     }
     func removeTempNode() {
         rootTempNode.removeFromParentNode()
@@ -438,9 +343,9 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         var nearestNode = SCNNode()
         
         rootPathNode.enumerateChildNodes { (child, _) in
-            if !isEqual(n1: origin, n2: child.position) {
+            if !utility.isEqual(n1: origin, n2: child.position) {
                 
-                let dist0 = distanceBetween(n1: node.position, n2: child.position)
+                let dist0 = utility.distanceBetween(n1: node.position, n2: child.position)
                 if minDistanc>dist0
                 {
                     minDistanc = dist0
@@ -448,8 +353,10 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
                 }
             }}
         stringPathMap["\(SCNVector3Make(thirdColumn.x, thirdColumn.y, thirdColumn.z))"] = ["\(nearestNode.position)"]
-        poiNode.append("\(SCNVector3Make(thirdColumn.x, thirdColumn.y, thirdColumn.z))")
-        savePOIData()
+        poiPositionStringArray.append("\(SCNVector3Make(thirdColumn.x, thirdColumn.y, thirdColumn.z))")
+        myQueue.async {
+            self.utility.savePOIData(poiPositionStringArray: self.poiPositionStringArray, mapName: self.mapName)
+        }
     }
     
     func drawPointOfInterestNodeFromfile(position:vector_double3) {
@@ -480,9 +387,9 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         var nearestNode = SCNNode()
         
         rootPathNode.enumerateChildNodes { (child, _) in
-            if !isEqual(n1: origin, n2: child.position) {
+            if !utility.isEqual(n1: origin, n2: child.position) {
                 
-                let dist0 = distanceBetween(n1: node.position, n2: child.position)
+                let dist0 = utility.distanceBetween(n1: node.position, n2: child.position)
                 if minDistanc>dist0
                 {
                     minDistanc = dist0
@@ -490,7 +397,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
                 }
             }}
         stringPathMap["\(SCNVector3Make(Float(position.x), Float(position.y), Float(position.z)))"] = ["\(nearestNode.position)"]
-        poiNode.append("\(SCNVector3Make(Float(position.x), Float(position.y), Float(position.z)))")
+        poiPositionStringArray.append("\(SCNVector3Make(Float(position.x), Float(position.y), Float(position.z)))")
     }
     
     func navigateTo(destNode:String) {
@@ -510,7 +417,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         //Retrieving from the StringMap and
         //Adding unique (key as string and value as graphNode)  into the dictOfNodes
         for data in stringPathMap {
-            let myVector = self.getVector3FromString(str: data.key)
+            let myVector = self.utility.getVector3FromString(str: data.key)
             dictOfNodes[data.key] = GKGraphNode2D(point: vector2(Float(myVector.x),Float(myVector.z)))
             pathGraph.add([dictOfNodes[data.key]!])
         }
@@ -543,8 +450,9 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
                 skipWaypointFlag = false
                 continue
             }
-            let str = SCNVector3(x.position.x, tempYAxis, x.position.y)
-            let dst = SCNVector3(path.position.x, tempYAxis, path.position.y)
+            let theYAxis = utility.getYAxis()
+            let str = SCNVector3(x.position.x, theYAxis, x.position.y)
+            let dst = SCNVector3(path.position.x, theYAxis, path.position.y)
             let navigationNode = CylinderLine(v1: str, v2: dst, radius: 0.2, UIImageName:"arrow5")
             
             navigationNode.startTimer()
@@ -556,40 +464,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         
     }
     
-    func saveFile () {
-        
-        myQueue.async {
-            guard let documentDirectoryUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-            
-            let fileUrl: URL = documentDirectoryUrl.appendingPathComponent(self.mapName+".json")
-            
-            do {
-                let dataOut = try JSONSerialization.data(withJSONObject: self.stringPathMap, options: [])
-                try dataOut.write(to: fileUrl, options: [])
-                //            self.label.text = "File saved"
-            } catch {
-                print (error)
-                return;
-            }
-        }
-    }
-    func savePOIData() {
     
-        myQueue.async {
-            guard let documentDirectoryUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return }
-            
-            let fileUrl: URL = documentDirectoryUrl.appendingPathComponent(self.mapName+"_poi"+".json")
-            
-            do {
-                let dataOut = try JSONSerialization.data(withJSONObject: self.poiNode, options: [])
-                try dataOut.write(to: fileUrl, options: [])
-                //            self.label.text = "File saved"
-            } catch {
-                print (error)
-                return;
-            }
-        }
-    }
     func retrieveFromFile() -> Bool {
         
         guard let documentDirectoryUrl = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask).first else { return false }
@@ -612,14 +487,14 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
             
             for data in self.stringPathMap {
                 
-                let node1 = self.getVector3FromString(str: data.key)
+                let node1 = self.utility.getVector3FromString(str: data.key)
                 let n1 = SCNVector3Make(Float(node1.x), Float(node1.y), Float(node1.z))
                 
                 for data2 in data.value {
                     
-                    let node2 = self.getVector3FromString(str: data2)
+                    let node2 = self.utility.getVector3FromString(str: data2)
                     let n2 = SCNVector3Make(Float(node2.x), Float(node2.y), Float(node2.z))
-                    self.addPathNodes(n1: n1, n2: n2)
+                    self.addPathNodes(n1: n1, n2: n2,shouldSave:false)
                 }
             }
         }
@@ -637,7 +512,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         do {
             let data = try Data(contentsOf: fileUrl, options: [])
             guard let poiArray = try JSONSerialization.jsonObject(with: data, options: []) as? [String] else { return false }
-            self.poiNode = poiArray
+            self.poiPositionStringArray = poiArray
             //            self.label.text = "Retrieved from file"
         } catch {
             print ("Could not retrieve shape json file")
@@ -647,10 +522,10 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         }
         myQueue.async {
             self.poiCounter = 0
-            for data in self.poiNode {
+            for data in self.poiPositionStringArray {
                 
                 self.poiCounter += 1
-                let node1 = self.getVector3FromString(str: data)
+                let node1 = self.utility.getVector3FromString(str: data)
                 self.drawPointOfInterestNodeFromfile(position: node1)
                 
             }
@@ -658,70 +533,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         
         return true
     }
-
-    func distanceBetween(n1:SCNVector3,n2:SCNVector3) -> Float {
-        return ((n1.x-n2.x)*(n1.x-n2.x) + (n1.z-n2.z)*(n1.z-n2.z)).squareRoot()
-    }
     
-    func midPointBetween(n1:SCNVector3,n2:SCNVector3) -> SCNVector3 {
-        
-        return SCNVector3Make(((n1.x+n2.x)/2), ((n1.y+n2.y)/2), ((n1.z+n2.z)/2))
-    }
-    
-    func angleOfInclination(n1:SCNVector3,n2:SCNVector3)-> Float{
-        
-        let theta = ((n2.z-n1.z)/(n2.x-n1.x)).degreesToRadians // m = tan0 //
-        return Float(tan(theta))
-    }
-    func isEqual(n1:SCNVector3,n2:SCNVector3)-> Bool {
-        if (n1.x == n2.x) && (n1.y == n2.y) && (n1.z == n2.z) {
-            return true
-        } else {
-            return false
-        }
-    }
-    func getVector3FromString(str:String) -> vector_double3 {
-        
-        let xrange = str.index(str.startIndex, offsetBy: 10)...str.index(str.endIndex, offsetBy: -1)
-        let str1 = str[xrange]
-        
-        var x:String = ""
-        var y:String = ""
-        var z:String = ""
-        var counter = 1
-        for i in str1 {
-            //    print (i)
-            if (i == "-" || i == "." || i == "0" || i == "1" || i == "2" || i == "3" || i == "4" || i == "5" || i == "6" || i == "7" || i == "8" || i == "9") {
-                switch counter {
-                case 1 : x = x + "\(i)"
-                case 2 : y = y + "\(i)"
-                case 3 : z = z + "\(i)"
-                default : break
-                }
-            } else if (i == ",") {
-                counter = counter + 1
-            }
-        }
-        return vector3(Double(x)!,Double(y)!,Double(z)!)
-    }
-    
-    func setupQRView() {
-        
-        self.view.addSubview(qrView)
-        self.qrView.frame.origin.y = self.view.frame.height - qrView.frame.height
-        let laser = UIImageView(image: #imageLiteral(resourceName: "PicsArt_08-05-05.55.20"))
-        laser.frame = CGRect(x: 0, y: 35, width: self.qrView.qrframe.frame.size.width, height: 6.0)
-        laser.alpha = 0.7
-        self.qrView.qrframe.addSubview(laser)
-        
-                UIView.animate(withDuration: 1, delay: 0.3, options: [.repeat,.autoreverse],
-                               animations: {
-                                laser.frame.origin.y = self.qrView.qrframe.frame.size.height - 35
-                },
-                               completion: nil
-                )
-        
-    }
     func setupSceneView() {
         
         self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints,ARSCNDebugOptions.showWorldOrigin]
@@ -757,9 +569,9 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         var nearestNode = SCNNode()
         
         rootPathNode.enumerateChildNodes { (child, _) in
-            if !isEqual(n1: origin, n2: child.position) {
+            if !utility.isEqual(n1: origin, n2: child.position) {
                 
-                let dist0 = distanceBetween(n1: cameraLocation, n2: child.position)
+                let dist0 = utility.distanceBetween(n1: cameraLocation, n2: child.position)
                 if minDistanc>dist0 {
                     
                     minDistanc = dist0
@@ -770,5 +582,132 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate {
         stringPathMap["\(cameraLocation)"] = ["\(nearestNode.position)"]
         strNode = "\(cameraLocation)"
     }
+    func setupQRView() {
+        
+        self.view.addSubview(qrView)
+        self.qrView.frame.origin.y = self.view.frame.height - qrView.frame.height
+        let laser = UIImageView(image: #imageLiteral(resourceName: "PicsArt_08-05-05.55.20"))
+        laser.frame = CGRect(x: 0, y: 35, width: self.qrView.qrframe.frame.size.width, height: 6.0)
+        laser.alpha = 0.7
+        self.qrView.qrframe.addSubview(laser)
+        
+        UIView.animate(withDuration: 1, delay: 0.3, options: [.repeat,.autoreverse],
+                       animations: {
+                        laser.frame.origin.y = self.qrView.qrframe.frame.size.height - 35
+        },
+                       completion: nil
+        )
+        
+    }
+    func detectQRCode(frame:ARFrame) {
+    
+        // Only run one Vision request at a time
+        if self.processing {
+            return
+        }
+        self.processing = true
+        
+        // Create a Barcode Detection Request
+        let request = VNDetectBarcodesRequest { (request, error) in
+            
+            // Get the first result out of the results, if there are any
+            if let results = request.results, let result = results.first as? VNBarcodeObservation {
+                
+                // Get the bounding box for the bar code and find the center
+                var rect = result.boundingBox
+                
+                // Flip coordinates
+                rect = rect.applying(CGAffineTransform(scaleX: 1, y: -1))
+                rect = rect.applying(CGAffineTransform(translationX: 0, y: 1))
+                
+                // Get center
+                let center = CGPoint(x: rect.midX, y: rect.midY)
+                
+                // Go back to the main thread
+                DispatchQueue.main.async {
+                    
+                    // Perform a hit test on the ARFrame to find a surface
+                    let hitTestResults = frame.hitTest(center, types: [.featurePoint/*, .estimatedHorizontalPlane, .existingPlane, .existingPlaneUsingExtent*/] )
+                    
+                    // If we have a result, process it
+                    if let hitTestResult = hitTestResults.first {
+                        
+                        // If we already have an anchor, update the position of the attached node
+                        if let detectedDataAnchor = self.detectedDataAnchor,
+                            let node = self.sceneView.node(for: detectedDataAnchor) {
+                            
+                            node.transform = SCNMatrix4(hitTestResult.worldTransform)
+                            
+                            if #available(iOS 11.3, *), self.setOriginCount == 25{
+                                
+                                let oNode = SCNNode()
+                                let xNode = SCNNode()
+                                oNode.transform = self.originTransform
+                                
+                                xNode.rotation = oNode.rotation
+                                xNode.position = SCNVector3Make(node.transform.m41, node.transform.m42, node.transform.m43)
+                                
+                                self.sceneView.session.setWorldOrigin(relativeTransform: matrix_float4x4(xNode.transform))
+                                
+                                
+                                self.origin = self.sceneView.scene.rootNode.position
+                                self.QRSphere.removeFromParentNode()
+                                _ = self.retrieveFromFile()
+                                _ = self.retrievePOIData()
+                                self.drawBtn.isHidden = false
+                                self.pointer.isHidden = false
+                                self.addPOIBtn.isHidden = false
+                                self.navigateBtn.isHidden = false
+                                self.qrView.removeFromSuperview()
+                                self.impact.impactOccurred()
+                            } else {
+                                // Fallback on earlier versions
+                            }
+                            self.setOriginCount += 1
+                            
+                            
+                        } else {
+                            // Create an anchor. The node will be created in delegate methods
+                            self.detectedDataAnchor = ARAnchor(transform: hitTestResult.worldTransform)
+                            self.sceneView.session.add(anchor: self.detectedDataAnchor!)
+                        }
+                    }
+                    // Set processing flag off
+                    if self.exitQRScan {
+                        self.processing = true
+                    }
+                    else {
+                        self.processing = false
+                    }
+                }
+                
+            } else {
+                // Set processing flag off
+                if self.exitQRScan {
+                    self.processing = true
+                }
+                else {
+                    self.processing = false
+                }
+            }
+        }
+        
+        // Process the request in the background
+        DispatchQueue.global(qos: .userInitiated).async {
+            do {
+                // Set it to recognize QR code only
+                request.symbologies = [.QR]
+                
+                // Create a request handler using the captured image from the ARFrame
+                let imageRequestHandler = VNImageRequestHandler(cvPixelBuffer: frame.capturedImage,
+                                                                options: [:])
+                // Process the request
+                try imageRequestHandler.perform([request])
+            } catch {
+                
+            }
+        }
+        }
+    
 }
 

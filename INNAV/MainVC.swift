@@ -43,7 +43,6 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate,PNDelegate {
     var pathGraph = GKGraph()
     let origin = SCNVector3Make(0, 0, 0)
     var originTransform = SCNMatrix4()
-    var shouldSetTempYAxis = true
     var tempYAxis = Float()
     
     var stringPathMap = [String:[String]]()
@@ -107,12 +106,11 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate,PNDelegate {
     func onStatusChange(_ prevStatus: LibPlacenote.MappingStatus, _ currStatus: LibPlacenote.MappingStatus) -> Void {
         if (prevStatus == LibPlacenote.MappingStatus.lost && currStatus == LibPlacenote.MappingStatus.running) {
             
+            print("Map Found!")
             _ = retrieveFromFile()
             _ = retrievePOIData()
-            
-            print("Map Found!")
             self.statusLabel.text = "Map Found!"
-            LibPlacenote.instance.stopSession()
+//            LibPlacenote.instance.stopSession()
         }
 //        if prevStatus == LibPlacenote.MappingStatus.running && currStatus != LibPlacenote.MappingStatus.running { //just lost localization
 //            print ("Just lost")
@@ -142,12 +140,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate,PNDelegate {
     
     func renderer(_ renderer: SCNSceneRenderer, didAdd node: SCNNode, for anchor: ARAnchor) {
         
-        if shouldSetTempYAxis
-        {
-            let tempTransform = anchor.transform.columns.3
-            tempYAxis = tempTransform.y
-            shouldSetTempYAxis = false
-        }
+        
         if showFloorMesh{
             DispatchQueue.main.async {
                 if let planeAnchor = anchor as? ARPlaneAnchor {
@@ -303,7 +296,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate,PNDelegate {
         if tempNodeFlag {
             
             pathNodes[0].position.y = pathNodes[1].position.y
-//            tempYAxis = pathNodes[0].position.y
+            tempYAxis = pathNodes[0].position.y
             addPathNodes(n1: pathNodes[0].position,n2: pathNodes[1].position)
             counter = 0
             tempNodeFlag = false
@@ -372,17 +365,16 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate,PNDelegate {
                 print ("MapId: " + mapID!)
                 self.statusLabel.text = mapID!
                 
-                
-                
-                var dict = UserDefaults.standard.object(forKey: "mapList") as! [String:String]
+                var dict = UserDefaults.standard.value(forKey: "mapList") as! [String:String]
                 dict[self.mapName] = mapID
                 print(dict)
                 UserDefaults.standard.setValue(dict, forKey: "mapList")
+                UserDefaults.standard.synchronize()
                 
                 LibPlacenote.instance.stopSession()  },
                                           
                                           uploadProgressCb: {(completed: Bool, faulted: Bool, percentage: Float) -> Void in
-                                            print("Map Uploading...")
+            
                                             self.statusLabel.text = "Map Uploading..."
                                             if(completed){
                                                 print("Map upload done!!!")
@@ -397,7 +389,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate,PNDelegate {
         if (!placenoteSessionRunning)
         {
             
-            let dict = UserDefaults.standard.object(forKey: "mapList") as! [String:String]
+            let dict = UserDefaults.standard.value(forKey: "mapList") as! [String:String]
             
             LibPlacenote.instance.loadMap(mapId: dict[mapName]!,
                                           downloadProgressCb: {(completed: Bool, faulted: Bool, percentage: Float) -> Void in
@@ -510,9 +502,7 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate,PNDelegate {
         } else { // Create new node
             stringPathMap[position2String] = [position1String]
         }
-        myQueue.async {
-            self.saveFile()
-        }
+        saveFile()
     }
     func removeTempNode() {
         rootTempNode.removeFromParentNode()
@@ -608,11 +598,13 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate,PNDelegate {
     
     func navigateTo(destNode:String) {
         
+        LibPlacenote.instance.stopSession()
         self.sceneView.debugOptions.remove(
             [ARSCNDebugOptions.showFeaturePoints,ARSCNDebugOptions.showWorldOrigin])
         removeParentNodes()
         savePhoneLocationIntoMap()
         setupGKGraphAndNavigateTo(destNode:destNode)
+        
     }
     func setupGKGraphAndNavigateTo(destNode:String) {
         
@@ -722,12 +714,12 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate,PNDelegate {
             return false
         }
         myQueue.async {
-            
+
             for data in self.stringPathMap {
                 
                 let node1 = self.getVector3FromString(str: data.key)
                 let n1 = SCNVector3Make(Float(node1.x), Float(node1.y), Float(node1.z))
-                
+                self.tempYAxis = n1.y
                 for data2 in data.value {
                     
                     let node2 = self.getVector3FromString(str: data2)
@@ -838,11 +830,11 @@ class MainVC: UIViewController,ARSCNViewDelegate,ARSessionDelegate,PNDelegate {
         self.sceneView.debugOptions = [ARSCNDebugOptions.showFeaturePoints,ARSCNDebugOptions.showWorldOrigin]
         self.sceneView.autoenablesDefaultLighting = true
         
-        if #available(iOS 11.3, *) {
-            configuration.planeDetection = [.horizontal,.vertical]
-        } else {
-            // Fallback on earlier versions
-        }
+//        if #available(iOS 11.3, *) {
+            configuration.planeDetection = [.horizontal]
+//        } else {
+//            // Fallback on earlier versions
+//        }
         configuration.worldAlignment = .gravity
         sceneView.delegate = self
         sceneView.session.delegate = self

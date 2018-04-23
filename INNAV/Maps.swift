@@ -29,13 +29,19 @@ class Maps: UIViewController,UITableViewDataSource,UITableViewDelegate,UITextFie
         newMapTextField.isHidden = true
         newMapTextField.delegate = self
         newMapTextField.returnKeyType = .done
-        guard let mapDict = UserDefaults.standard.object(forKey: "mapList")
+        guard let mapDict = UserDefaults.standard.value(forKey: "mapList")
             else {return}
+        UserDefaults.standard.synchronize()
         self.mapDictionary = mapDict as! [String:String]
         for i in mapDictionary {
             
             mapArray.append(i.key)
         }
+    }
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewWillAppear(true)
+        
+        tableView.reloadData()
     }
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         if mapArray.count == 0 {
@@ -66,7 +72,9 @@ class Maps: UIViewController,UITableViewDataSource,UITableViewDelegate,UITextFie
     func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         UserDefaults.standard.set(mapArray[indexPath.row], forKey: "mapName")
-        UserDefaults.standard.set(mapDictionary, forKey: "mapList")
+        UserDefaults.standard.setValue(mapDictionary, forKey: "mapList")
+        
+        print(UserDefaults.standard.value(forKey: "mapList")!)
     }
     func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCellEditingStyle, forRowAt indexPath: IndexPath) {
         
@@ -78,7 +86,7 @@ class Maps: UIViewController,UITableViewDataSource,UITableViewDelegate,UITextFie
             self.mapDictionary.removeValue(forKey: mapArray[indexPath.row])
             self.mapArray.remove(at: indexPath.row)
             tableView.deleteRows(at: [indexPath], with: .fade)
-            UserDefaults.standard.set(mapDictionary, forKey: "mapList")
+            UserDefaults.standard.setValue(mapDictionary, forKey: "mapList")
             
         }
     }
